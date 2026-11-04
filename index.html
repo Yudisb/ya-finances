@@ -3,313 +3,335 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meu Dinheiro Organizado | Dashboard Supabase</title>
+  <title>YA Finanças | Dashboard Emerald</title>
 
-  <!-- Bibliotecas de Terceiros -->
+  <!-- Tailwind CSS & FontAwesome & Inter Font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
-  <!-- SDK do Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
 
   <style>
-    :root{
-      --bg0:#f6f8ff; --bg1:#eef3ff; --card:#ffffffcc; --card2:#ffffff;
-      --border:rgba(15,23,42,.10); --border2:rgba(15,23,42,.08);
-      --text:#0f172a; --muted:#475569; --accent:#0ea5e9; --accent2:#8b5cf6;
-      --green:#16a34a; --red:#ef4444; --orange:#f59e0b;
-      --shadow: 0 16px 35px rgba(2,6,23,.10); --shadow2: 0 8px 18px rgba(2,6,23,.08);
-      --r: 18px; --focus: 0 0 0 4px rgba(14,165,233,.18);
-    }
-    *{ box-sizing: border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0; padding:22px; color:var(--text);
-      background: radial-gradient(1100px 600px at 15% 10%, rgba(14,165,233,.18), transparent 55%),
-                  radial-gradient(900px 520px at 85% 15%, rgba(139,92,246,.18), transparent 55%),
-                  linear-gradient(180deg, var(--bg0), var(--bg1));
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      overflow-x:hidden;
-    }
-    .container{ max-width: 1180px; margin: 0 auto; }
-    
-    /* Barra de Autenticação */
-    .auth-bar{
-      background: rgba(255,255,255,.85); border: 1px solid var(--border2);
-      border-radius: 14px; padding: 10px 14px; margin-bottom: 12px;
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
-    }
-    .auth-inputs{ display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
-    .auth-inputs input{
-      border: 1px solid var(--border2); background: #fff; padding: 8px 10px;
-      border-radius: 10px; font-weight: 700; font-size: .85rem; outline: none; flex: 1; min-width: 140px;
-    }
-
-    .topbar{ display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:12px; flex-wrap:wrap; }
-    .title h1{ margin:0; font-size: 1.35rem; display:flex; align-items:center; gap:10px; }
-    .title p{ margin:6px 0 0; color:var(--muted); font-size:.92rem; font-weight:600; }
-    .actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .btn{
-      border:1px solid var(--border2); background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.65));
-      color:var(--text); padding:10px 12px; border-radius: 12px; cursor:pointer; font-weight:800; font-size:.92rem;
-      box-shadow: var(--shadow2); transition:.18s ease; display:flex; align-items:center; gap:8px; user-select:none; white-space:nowrap;
-    }
-    .btn:hover{ transform: translateY(-1px); }
-    .btn.primary{ border: 1px solid rgba(14,165,233,.35); background: linear-gradient(135deg, rgba(14,165,233,.22), rgba(139,92,246,.18)); }
-    .btn.danger{ border: 1px solid rgba(239,68,68,.28); background: linear-gradient(135deg, rgba(239,68,68,.14), rgba(255,255,255,.70)); }
-    .monthbar{ display:flex; gap:8px; align-items:center; padding:10px 12px; border-radius: 14px; border: 1px solid var(--border2); background: rgba(255,255,255,.70); box-shadow: var(--shadow2); flex-wrap: wrap; }
-    .monthbar .mini{ font-weight:950; color: var(--muted); font-size:.85rem; margin-right:2px; white-space:nowrap; }
-    .m-btn{ width:38px;height:38px; border-radius: 12px; border:1px solid var(--border2); background: rgba(255,255,255,.92); cursor:pointer; font-weight:1000; box-shadow: var(--shadow2); }
-    .monthbar select{ border:1px solid var(--border2); background: rgba(255,255,255,.92); border-radius: 12px; padding: 9px 10px; font-weight:950; color: var(--text); min-width: 150px; flex: 1; outline:none; }
-    .badge-all{ padding: 9px 10px; border-radius: 12px; border:1px solid rgba(14,165,233,.35); background: linear-gradient(135deg, rgba(14,165,233,.18), rgba(139,92,246,.14)); font-weight:1000; cursor:pointer; white-space:nowrap; }
-    .kpis{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 12px 0; }
-    .kpi{ background: linear-gradient(180deg, var(--card), var(--card2)); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px; position:relative; overflow:hidden; }
-    .kpi .row{ display:flex; align-items:flex-start; justify-content:space-between; gap: 14px; }
-    .kpi small{ color: var(--muted); font-weight: 900; letter-spacing: .08em; font-size: .68rem; text-transform: uppercase; }
-    .kpi .money{ margin-top:6px; font-size: 1.30rem; font-weight: 1000; white-space:nowrap; }
-    .kpi .icon{ width:40px;height:40px; border-radius: 14px; border:1px solid rgba(15,23,42,.10); background: rgba(255,255,255,.75); display:flex;align-items:center;justify-content:center; font-size: 1.05rem; flex: 0 0 auto; }
-    .tabs{ display:flex; gap:8px; padding: 6px; border:1px solid var(--border2); background: rgba(255,255,255,.70); border-radius: 999px; width: fit-content; box-shadow: var(--shadow2); margin-bottom: 14px; flex-wrap: wrap; }
-    .tab{ border:none; background: transparent; color: var(--muted); padding: 8px 12px; border-radius: 999px; cursor:pointer; font-weight: 950; font-size: .88rem; }
-    .tab.active{ color: #ffffff; background: linear-gradient(135deg, rgba(14,165,233,1), rgba(139,92,246,1)); box-shadow: 0 14px 28px rgba(14,165,233,.20); }
-    .grid{ display:grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items:start; }
-    .panel{ background: linear-gradient(180deg, var(--card), var(--card2)); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px; }
-    .panel h3{ margin: 0 0 8px; font-size: 1.02rem; }
-    .panel .sub{ margin: -2px 0 12px; color: var(--muted); font-size:.88rem; font-weight: 650; }
-    .sidebar{ display:flex; flex-direction:column; gap:16px; position: sticky; top: 16px; }
-    .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin: 10px 0 12px; padding: 10px; border-radius: 14px; border: 1px solid var(--border2); background: rgba(255,255,255,.75); }
-    .tool-left, .tool-right{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; width: 100%; }
-    @media(min-width: 640px) { .tool-left, .tool-right { width: auto; } }
-    .field{ display:flex; align-items:center; gap:8px; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.85); border: 1px solid var(--border2); min-height: 40px; flex: 1; }
-    .field input, .field select{ border:none; outline:none; background: transparent; color: var(--text); font-weight: 800; font-size: .9rem; width: 100%; }
-    .table-wrap{ border:1px solid var(--border2); border-radius: 14px; overflow-x: auto; background: rgba(255,255,255,.65); -webkit-overflow-scrolling: touch; }
-    table{ width:100%; border-collapse: collapse; font-size: .92rem; min-width: 550px; }
-    thead th{ position: sticky; top: 0; z-index: 2; text-align:left; padding: 12px; background: rgba(255,255,255,.92); border-bottom: 1px solid var(--border2); color: rgba(15,23,42,.75); font-size: .72rem; text-transform: uppercase; }
-    tbody td{ padding: 12px; border-bottom: 1px solid rgba(15,23,42,.07); vertical-align: middle; }
-    .muted{ color: var(--muted); font-weight: 700; font-size: .85rem; }
-    .chip{ display:inline-flex; align-items:center; gap:8px; padding: 6px 8px; border-radius: 999px; border: 1px solid rgba(15,23,42,.10); background: rgba(255,255,255,.88); font-weight: 950; font-size: .78rem; white-space:nowrap; }
-    .chip .dot{ width:8px;height:8px;border-radius:999px; background: rgba(71,85,105,.45); }
-    .chip.ganho .dot{ background: rgba(22,163,74,.95); }
-    .chip.fixo .dot{ background: rgba(245,158,11,.95); }
-    .chip.variavel .dot{ background: rgba(239,68,68,.95); }
-    .pill{ display:inline-flex; align-items:center; gap:6px; border:none; cursor:pointer; padding: 6px 8px; border-radius: 999px; font-weight: 1000; font-size: .75rem; border:1px solid rgba(15,23,42,.10); background: rgba(255,255,255,.85); color: var(--text); }
-    .pill.pago{ background: rgba(22,163,74,.10); border-color: rgba(22,163,74,.22); }
-    .pill.pendente{ background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.22); }
-    .v{ font-weight: 1000; white-space:nowrap; }
-    .v.g{ color: var(--green); } .v.d{ color: var(--red); }
-    .icon-btn{ width:34px;height:34px; border-radius: 12px; border:1px solid rgba(15,23,42,.10); background: rgba(255,255,255,.85); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
-    .form{ display:flex; flex-direction:column; gap:10px; }
-    .label{ font-size: .78rem; font-weight: 950; color: var(--muted); text-transform: uppercase; }
-    .inp, .sel{ width:100%; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.92); border: 1px solid var(--border2); color: var(--text); font-weight: 850; outline:none; }
-    .btn-add{ width:100%; padding: 13px; border-radius: 14px; border: 1px solid rgba(14,165,233,.40); background: linear-gradient(135deg, rgba(14,165,233,1), rgba(139,92,246,1)); color: #ffffff; font-weight: 1000; text-transform: uppercase; cursor:pointer; }
-    .empty{ padding: 16px; border-radius: 14px; border: 1px dashed rgba(15,23,42,.18); background: rgba(255,255,255,.70); color: var(--muted); text-align:center; font-weight: 800; }
-    .overlay{ position: fixed; inset: 0; background: rgba(2,6,23,.45); display:none; align-items:center; justify-content:center; padding: 18px; z-index: 1000; }
-    .modal{ width: min(520px, 100%); background: rgba(255,255,255,.95); border-radius: 18px; padding: 16px; }
-    .toasts{ position: fixed; right: 16px; bottom: 16px; left: 16px; display:flex; flex-direction:column; gap:10px; z-index: 1100; max-width: 360px; margin-left: auto; }
-    .toast{ background: rgba(255,255,255,.95); border: 1px solid rgba(15,23,42,.12); border-radius: 16px; padding: 12px; display:flex; gap:10px; align-items:center; }
-    @media (max-width: 980px){ .kpis{ grid-template-columns: repeat(2, 1fr); } .grid{ grid-template-columns: 1fr; } .sidebar{ position: static; } }
-    @media (max-width: 600px){ body{ padding: 12px; } .topbar{ flex-direction: column; align-items: stretch; gap: 12px; } .kpis{ grid-template-columns: 1fr; } }
+    body { font-family: 'Inter', sans-serif; }
+    /* Custom scrollbar for modern feel */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
 
-<body>
-  <div class="container">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
-    <!-- BARRA DE AUTENTICAÇÃO -->
-    <div class="auth-bar" id="auth-bar">
-      <div id="auth-logged-out" class="auth-inputs">
-        <input type="email" id="auth-email" placeholder="E-mail da conta" />
-        <input type="password" id="auth-password" placeholder="Senha" />
-        <button class="btn primary" id="btn-login">Entrar</button>
-        <button class="btn" id="btn-signup">Cadastrar</button>
-      </div>
-      <div id="auth-logged-in" style="display:none; align-items:center; justify-content:space-between; width:100%;">
-        <span id="user-display" style="font-weight:700; font-size:.9rem;">Conectado como: -</span>
-        <button class="btn danger" id="btn-logout" style="padding:6px 10px;">Sair</button>
-      </div>
-    </div>
-
-    <div class="topbar">
-      <div class="title">
-        <h1>💎 Dashboard Financeiro <span style="opacity:.75;font-weight:950;">Supabase</span></h1>
-        <p>Selecione um mês e controle tudo em tempo real.</p>
-      </div>
-      <div class="actions">
-        <div class="monthbar">
-          <span class="mini">📅 Mês</span>
-          <button class="m-btn" id="prevMonth">‹</button>
-          <select id="monthSelect"></select>
-          <button class="m-btn" id="nextMonth">›</button>
-          <button class="badge-all" id="monthAll">Todos</button>
+  <!-- AUTH MODAL / OVERLAY (If not logged in) -->
+  <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border border-slate-100">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl text-2xl mb-4 font-bold shadow-sm">
+          <i class="fa-solid fa-wallet"></i>
         </div>
-        <button class="btn primary" id="btn-export">📄 Exportar PDF</button>
+        <h2 class="text-2xl font-bold text-slate-900">YA Finanças</h2>
+        <p class="text-sm text-slate-500 mt-1">Controle financeiro inteligente em tempo real</p>
       </div>
-    </div>
 
-    <div class="kpis">
-      <div class="kpi">
-        <div class="row">
-          <div>
-            <small id="label-ganhos">Ganhos (mês)</small>
-            <div id="kpi-ganhos" class="money" style="color:var(--green)">R$ 0,00</div>
+      <form id="auth-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">E-mail</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-regular fa-envelope"></i></span>
+            <input type="email" id="auth-email" required class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" placeholder="seu@email.com" />
           </div>
-          <div class="icon">💰</div>
         </div>
-      </div>
-      <div class="kpi">
-        <div class="row">
-          <div>
-            <small id="label-despesas">Despesas (mês)</small>
-            <div id="kpi-despesas" class="money" style="color:var(--red)">R$ 0,00</div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Senha</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-regular fa-lock"></i></span>
+            <input type="password" id="auth-password" required class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" placeholder="••••••••" />
           </div>
-          <div class="icon">🧾</div>
         </div>
-      </div>
-      <div class="kpi">
-        <div class="row">
-          <div>
-            <small id="label-saldo">Saldo (mês)</small>
-            <div id="kpi-saldo" class="money">R$ 0,00</div>
-          </div>
-          <div class="icon">📈</div>
-        </div>
-      </div>
-      <div class="kpi">
-        <div class="row">
-          <div>
-            <small>Pendências</small>
-            <div id="kpi-pend" class="money" style="color:var(--orange)">0</div>
-          </div>
-          <div class="icon">⏳</div>
-        </div>
-      </div>
-    </div>
 
-    <div class="tabs">
-      <button class="tab active" data-t="todos">📌 Resumo</button>
-      <button class="tab" data-t="ganho">💵 Ganhos</button>
-      <button class="tab" data-t="fixo">🧾 Fixos</button>
-      <button class="tab" data-t="variavel">🛒 Variáveis</button>
+        <div class="pt-2 flex gap-3">
+          <button type="submit" id="btn-login" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition-all text-sm">Entrar</button>
+          <button type="button" id="btn-signup" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition-all text-sm">Cadastrar</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <div class="grid">
-      <div class="panel">
-        <h3>Lista de Lançamentos</h3>
-        <div class="sub">Tudo filtrado pelo mês escolhido.</div>
-        <div class="toolbar">
-          <div class="tool-left">
-            <div class="field">🔎 <input id="q" type="text" placeholder="Buscar..." /></div>
-            <div class="field">
-              ✅
-              <select id="f-status">
+  <!-- MAIN APP CONTAINER -->
+  <div id="app-container" class="flex-1 flex flex-col hidden">
+    
+    <!-- TOP NAVBAR -->
+    <header class="bg-emerald-700 text-white shadow-md sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-inner text-lg font-bold">
+            <i class="fa-solid fa-chart-pie"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-tight tracking-tight">YA Finanças</h1>
+            <p class="text-xs text-emerald-200">Dashboard Organizze Style</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <span id="user-display" class="hidden sm:inline-block text-xs font-medium bg-emerald-800/60 px-3 py-1.5 rounded-full border border-emerald-600/50"></span>
+          <button id="btn-logout" class="bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border border-emerald-600/50 flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
+
+      <!-- MONTH BAR & ACTIONS -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline-block"><i class="fa-regular fa-calendar mr-1"></i> Período:</span>
+          <button id="prevMonth" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+          <select id="monthSelect" class="bg-slate-50 border border-slate-200 text-slate-800 font-semibold px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"></select>
+          <button id="nextMonth" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+          <button id="monthAll" class="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl text-xs font-bold transition-all">Todos</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btn-export" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
+            <i class="fa-solid fa-file-pdf text-rose-500"></i> Exportar PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIS / METRICS CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Ganhos -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden flex items-center justify-between">
+          <div>
+            <p id="label-ganhos" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ganhos (mês)</p>
+            <h3 id="kpi-ganhos" class="text-xl font-extrabold text-emerald-600 mt-1">R$ 0,00</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shadow-inner">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+          </div>
+        </div>
+        <!-- Despesas -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden flex items-center justify-between">
+          <div>
+            <p id="label-despesas" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Despesas (mês)</p>
+            <h3 id="kpi-despesas" class="text-xl font-extrabold text-rose-600 mt-1">R$ 0,00</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg shadow-inner">
+            <i class="fa-solid fa-arrow-trend-down"></i>
+          </div>
+        </div>
+        <!-- Saldo -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden flex items-center justify-between">
+          <div>
+            <p id="label-saldo" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo (mês)</p>
+            <h3 id="kpi-saldo" class="text-xl font-extrabold text-slate-900 mt-1">R$ 0,00</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg shadow-inner">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+        </div>
+        <!-- Pendências -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pendências</p>
+            <h3 id="kpi-pend" class="text-xl font-extrabold text-amber-500 mt-1">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-lg shadow-inner">
+            <i class="fa-regular fa-clock"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABS NAVIGATION -->
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <button class="tab active px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 transition-all flex items-center gap-1.5 whitespace-nowrap" data-t="todos"><i class="fa-solid fa-list-check"></i> Resumo Geral</button>
+        <button class="tab px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap" data-t="ganho"><i class="fa-solid fa-money-bill-wave"></i> Ganhos</button>
+        <button class="tab px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap" data-t="fixo"><i class="fa-solid fa-file-invoice-dollar"></i> Fixos</button>
+        <button class="tab px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap" data-t="variavel"><i class="fa-solid fa-cart-shopping"></i> Variáveis</button>
+      </div>
+
+      <!-- MAIN GRID: TABLE + SIDEBAR (FORM & ANALYTICS) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- LEFT/MAIN: TRANSACTIONS TABLE (2 cols on lg) -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div>
+              <h3 class="font-bold text-slate-900">Lançamentos</h3>
+              <p class="text-xs text-slate-500">Filtrados pelo período selecionado</p>
+            </div>
+          </div>
+
+          <!-- FILTERS TOOLBAR -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs"><i class="fa-solid fa-search"></i></span>
+              <input id="q" type="text" placeholder="Buscar descrição..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+            </div>
+            <div>
+              <select id="f-status" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
                 <option value="all">Status: Todos</option>
-                <option value="pendente">Só pendentes</option>
-                <option value="pago">Só pagos</option>
+                <option value="pendente">Só Pendentes</option>
+                <option value="pago">Só Pagos</option>
+              </select>
+            </div>
+            <div>
+              <select id="f-sort" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                <option value="new">Mais Recentes</option>
+                <option value="old">Mais Antigos</option>
+                <option value="valueDesc">Maior Valor</option>
+                <option value="valueAsc">Menor Valor</option>
               </select>
             </div>
           </div>
-          <div class="tool-right">
-            <div class="field">
-              ↕️
-              <select id="f-sort">
-                <option value="new">Mais recentes</option>
-                <option value="old">Mais antigos</option>
-                <option value="valueDesc">Maior valor</option>
-                <option value="valueAsc">Menor valor</option>
-              </select>
-            </div>
+
+          <!-- TABLE CONTAINER -->
+          <div class="table-wrap border border-slate-100 rounded-xl overflow-x-auto flex-1">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
+                  <th class="py-3 px-4">Data</th>
+                  <th class="py-3 px-4">Descrição</th>
+                  <th class="py-3 px-4">Categoria</th>
+                  <th class="py-3 px-4">Valor</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabela" class="divide-y divide-slate-100 text-xs font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+          <div id="emptyTable" class="hidden py-8 text-center text-slate-400 text-xs font-semibold border border-dashed border-slate-200 rounded-xl mt-4">
+            Nenhum lançamento encontrado neste período.
           </div>
         </div>
 
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:100px;">Data</th>
-                <th>Descrição</th>
-                <th style="width:160px;">Categoria / Tipo</th>
-                <th style="width:120px;">Valor</th>
-                <th style="width:110px;">Status</th>
-                <th style="width:60px;">Ação</th>
-              </tr>
-            </thead>
-            <tbody id="tabela"></tbody>
-          </table>
+        <!-- RIGHT SIDEBAR: NEW TRANSACTION & CHART -->
+        <div class="space-y-6">
+          
+          <!-- NEW TRANSACTION FORM -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+            <h3 class="font-bold text-slate-900 mb-1">Novo Lançamento</h3>
+            <p class="text-xs text-slate-500 mb-4">Adicione receitas ou despesas</p>
+
+            <form id="form" class="space-y-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição</label>
+                <input class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="text" id="desc" placeholder="Ex: Salário, Aluguel..." required />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Valor (R$)</label>
+                  <input class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="number" id="valor" placeholder="1500.00" step="0.01" inputmode="decimal" required />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data</label>
+                  <input class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="date" id="data" required />
+                </div>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Categoria</label>
+                <select class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" id="categoria">
+                  <option value="🏠 Moradia">🏠 Moradia</option>
+                  <option value="🍽️ Alimentação">🍽️ Alimentação</option>
+                  <option value="🚗 Transporte">🚗 Transporte</option>
+                  <option value="🩺 Saúde">🩺 Saúde</option>
+                  <option value="🎓 Educação">🎓 Educação</option>
+                  <option value="📱 Assinaturas">📱 Assinaturas</option>
+                  <option value="🛍️ Compras">🛍️ Compras</option>
+                  <option value="💳 Cartão/Taxas">💳 Cartão/Taxas</option>
+                  <option value="🎁 Presentes">🎁 Presentes</option>
+                  <option value="💍 Casamento">💍 Casamento</option>
+                  <option value="💼 Trabalho">💼 Trabalho</option>
+                  <option value="📌 Outros">📌 Outros</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+                <select class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" id="tipo">
+                  <option value="ganho">💵 Ganho (Entrada)</option>
+                  <option value="fixo">🧾 Gasto Fixo</option>
+                  <option value="variavel">🛒 Gasto Variável</option>
+                </select>
+              </div>
+              <button type="submit" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition-all text-xs uppercase tracking-wider">
+                <i class="fa-solid fa-plus mr-1"></i> Registrar
+              </button>
+            </form>
+          </div>
+
+          <!-- ANALYTICS CARD -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+            <h3 class="font-bold text-slate-900 mb-1">Análise de Gastos</h3>
+            <p class="text-xs text-slate-500 mb-4">Distribuição por despesa</p>
+            <div class="h-48 relative flex items-center justify-center">
+              <canvas id="chart"></canvas>
+              <div id="emptyChart" class="hidden text-xs text-slate-400 font-semibold text-center">Sem despesas no período.</div>
+            </div>
+          </div>
+
         </div>
-        <div id="emptyTable" class="empty" style="display:none; margin-top:12px;">Faça login para carregar os lançamentos.</div>
+
       </div>
 
-      <div class="sidebar">
-        <div class="panel">
-          <h3>Novo Lançamento</h3>
-          <form id="form" class="form">
-            <div>
-              <div class="label">Descrição</div>
-              <input class="inp" type="text" id="desc" placeholder="Ex: Salário, Aluguel..." required />
-            </div>
-            <div>
-              <div class="label">Valor (R$)</div>
-              <input class="inp" type="number" id="valor" placeholder="Ex: 1500" step="0.01" inputmode="decimal" required />
-            </div>
-            <div>
-              <div class="label">Data</div>
-              <input class="inp" type="date" id="data" />
-            </div>
-            <div>
-              <div class="label">Categoria</div>
-              <select class="sel" id="categoria">
-                <option value="🏠 Moradia">🏠 Moradia</option>
-                <option value="🍽️ Alimentação">🍽️ Alimentação</option>
-                <option value="🚗 Transporte">🚗 Transporte</option>
-                <option value="🩺 Saúde">🩺 Saúde</option>
-                <option value="🎓 Educação">🎓 Educação</option>
-                <option value="📱 Assinaturas">📱 Assinaturas</option>
-                <option value="🛍️ Compras">🛍️ Compras</option>
-                <option value="💳 Cartão/Taxas">💳 Cartão/Taxas</option>
-                <option value="🎁 Presentes">🎁 Presentes</option>
-                <option value="💍 Casamento">💍 Casamento</option>
-                <option value="💼 Trabalho">💼 Trabalho</option>
-                <option value="📌 Outros">📌 Outros</option>
-              </select>
-            </div>
-            <div>
-              <div class="label">Tipo</div>
-              <select class="sel" id="tipo">
-                <option value="ganho">💵 Ganho (Entrada)</option>
-                <option value="fixo">🧾 Gasto Fixo</option>
-                <option value="variavel">🛒 Gasto Variável</option>
-              </select>
-            </div>
-            <button type="submit" class="btn-add">Registrar</button>
-          </form>
-        </div>
+    </main>
 
-        <div class="panel">
-          <h3>Análise de Gastos</h3>
-          <div class="chart-box" style="height: 240px; position: relative;">
-            <canvas id="chart"></canvas>
-            <div id="emptyChart" class="empty" style="display:none; margin-top:10px;">Sem despesas no período.</div>
-          </div>
-          <div id="progresso-gastos"></div>
-        </div>
+    <!-- FOOTER -->
+    <footer class="mt-auto py-6 text-center text-xs text-slate-400 font-medium border-t border-slate-200/60 bg-white/50">
+      YA Finanças • Sincronização em tempo real via Supabase &bull; Organizze Emerald Theme
+    </footer>
+  </div>
+
+  <!-- CONFIRMATION MODAL -->
+  <div id="overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 border border-slate-100">
+      <h4 id="m-title" class="font-bold text-slate-900 text-base mb-1">Confirmar ação</h4>
+      <p id="m-text" class="text-xs text-slate-500 mb-6">Tem certeza?</p>
+      <div class="flex gap-2 justify-end">
+        <button id="m-cancel" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-all">Cancelar</button>
+        <button id="m-ok" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs shadow-sm transition-all">Confirmar</button>
       </div>
     </div>
   </div>
 
-  <div class="overlay" id="overlay">
-    <div class="modal">
-      <h4 id="m-title">Confirmar ação</h4>
-      <p id="m-text">Tem certeza?</p>
-      <div style="display:flex; gap:10px; justify-content:flex-end;">
-        <button class="btn" id="m-cancel">Cancelar</button>
-        <button class="btn danger" id="m-ok">Confirmar</button>
-      </div>
-    </div>
-  </div>
-  <div class="toasts" id="toasts"></div>
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div id="toasts" class="fixed right-4 bottom-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
+  <!-- SCRIPT LOGIC -->
   <script>
     // =========================================================================
-    // CONFIGURAÇÃO SEGURA DO SUPABASE
+    // SUPABASE CONFIGURATION
     // =========================================================================
     const SUPABASE_URL = "https://npipowldwmonvcnwvcho.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_lb4mLbLEVwag2XSxP3DaLA_P7v1-rd2";
@@ -324,7 +346,7 @@
     let statusFilter = "all";
     let sortBy = "new";
     let monthFilter = "all";
-    let chart;
+    let chartInstance = null;
     let realtimeChannel = null;
 
     const PAST_MONTHS = 12;
@@ -344,20 +366,21 @@
     const showToast = (type, title, text) => {
       const wrap = document.getElementById("toasts");
       const el = document.createElement("div");
-      el.className = `toast ${type}`;
-      el.innerHTML = `<div><b>${title}</b><br><small>${text}</small></div>`;
+      const bgColor = type === 'danger' ? 'bg-rose-50 border-rose-200 text-rose-800' : type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-slate-200 text-slate-800';
+      el.className = `pointer-events-auto p-4 rounded-xl border shadow-lg text-xs font-medium flex flex-col gap-0.5 animate-bounce-short ${bgColor}`;
+      el.innerHTML = `<span class="font-bold text-sm">${title}</span><span>${text}</span>`;
       wrap.appendChild(el);
-      setTimeout(() => el.remove(), 2200);
+      setTimeout(() => el.remove(), 2500);
     };
 
-    // --- BANCO DE DADOS & REALTIME ---
+    // --- DB DATA & REALTIME ---
     async function carregarDados() {
       if (!currentUser) return;
       const { data, error } = await clienteSupabase.from("lancamentos").select("*");
       if (error) {
         showToast("danger", "Erro ao carregar", error.message);
       } else {
-        dados = data.map(item => ({
+        dados = (data || []).map(item => ({
           id: item.id,
           desc: item.descricao,
           valor: item.valor,
@@ -376,43 +399,61 @@
       if (realtimeChannel) clienteSupabase.removeChannel(realtimeChannel);
       realtimeChannel = clienteSupabase
         .channel("tabela-lancamentos")
-        .on("postgres_changes", { event: "*", schema: "public", table: "lancamentos" }, (payload) => {
-          console.log("Atualização remota recebida!", payload);
+        .on("postgres_changes", { event: "*", schema: "public", table: "lancamentos" }, () => {
           carregarDados();
         })
-        .subscribe((status) => {
-          if(status === "SUBSCRIBED") {
-            console.log("Conectado ao Supabase Realtime com sucesso!");
-          }
-        });
+        .subscribe();
     }
 
     async function toggleStatus(id) {
       const item = dados.find(d => d.id === id);
       if (!item) return;
       const { error } = await clienteSupabase.from("lancamentos").update({ pago: !item.pago }).eq("id", id);
-      
       if (error) showToast("danger", "Erro ao atualizar", error.message);
-      else carregarDados(); // <-- ATUALIZA LOCAL NA HORA
+      else carregarDados();
     }
 
     async function requestDelete(id) {
       openModal({
-        title: "Excluir lançamento", text: "Deseja excluir este item?", okText: "Excluir",
+        title: "Excluir lançamento", text: "Deseja excluir este item permanentemente?", okText: "Excluir",
         onOk: async () => {
           const { error } = await clienteSupabase.from("lancamentos").delete().eq("id", id);
           if (error) showToast("danger", "Erro ao excluir", error.message);
-          else carregarDados(); // <-- ATUALIZA LOCAL NA HORA
+          else carregarDados();
         }
       });
     }
 
-    // --- INICIALIZAÇÃO DE EVENTOS DE AUTENTICAÇÃO E FORMULÁRIO ---
+    // --- AUTH UI STATE ---
+    function updateAuthUI(user) {
+      currentUser = user;
+      const authModal = document.getElementById("auth-modal");
+      const appContainer = document.getElementById("app-container");
+
+      if (user) {
+        authModal.classList.add("hidden");
+        appContainer.classList.remove("hidden");
+        document.getElementById("user-display").textContent = user.email;
+        carregarDados();
+        inscreverRealtime();
+      } else {
+        authModal.classList.remove("hidden");
+        appContainer.classList.add("hidden");
+        dados = [];
+        if (realtimeChannel) clienteSupabase.removeChannel(realtimeChannel);
+      }
+    }
+
+    async function checkUser() {
+      const { data: { session } } = await clienteSupabase.auth.getSession();
+      updateAuthUI(session?.user || null);
+    }
+
+    // --- EVENT LISTENERS INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", () => {
       checkUser();
 
-      // Botão Login
-      document.getElementById("btn-login").onclick = async (e) => {
+      document.getElementById("auth-form").onsubmit = async (e) => {
         e.preventDefault();
         const email = document.getElementById("auth-email").value.trim();
         const password = document.getElementById("auth-password").value.trim();
@@ -420,41 +461,35 @@
         
         const { data, error } = await clienteSupabase.auth.signInWithPassword({ email, password });
         if (error) {
-          alert("Erro no Login: " + error.message);
           showToast("danger", "Erro ao entrar", error.message);
         } else {
-          showToast("success", "Conectado!", "Login efetuado.");
+          showToast("success", "Conectado!", "Bem-vindo de volta.");
           updateAuthUI(data.user);
         }
       };
 
-      // Botão Cadastro
-      document.getElementById("btn-signup").onclick = async (e) => {
-        e.preventDefault();
+      document.getElementById("btn-signup").onclick = async () => {
         const email = document.getElementById("auth-email").value.trim();
         const password = document.getElementById("auth-password").value.trim();
-        if (!email || !password) return showToast("danger", "Atenção", "Preencha e-mail e senha para cadastrar.");
+        if (!email || !password) return showToast("danger", "Atenção", "Preencha e-mail e senha.");
         
         const { data, error } = await clienteSupabase.auth.signUp({ email, password });
         if (error) {
-          alert("Erro no Cadastro: " + error.message);
-          showToast("danger", "Erro ao cadastrar", error.message);
+          showToast("danger", "Erro no cadastro", error.message);
         } else {
-          showToast("success", "Sucesso!", "Conta criada. Agora clique em Entrar.");
+          showToast("success", "Conta criada!", "Agora clique em Entrar.");
         }
       };
 
-      // Botão Logout
       document.getElementById("btn-logout").onclick = async () => {
         await clienteSupabase.auth.signOut();
         updateAuthUI(null);
-        showToast("info", "Desconectado", "Você saiu da conta.");
+        showToast("info", "Desconectado", "Até breve!");
       };
 
-      // Form Cadastro Lançamento
       document.getElementById("form").onsubmit = async (e) => {
         e.preventDefault();
-        if (!currentUser) return showToast("danger", "Atenção", "Você precisa estar conectado.");
+        if (!currentUser) return;
         
         const desc = document.getElementById("desc").value.trim();
         const valor = parseNumber(document.getElementById("valor").value);
@@ -475,92 +510,52 @@
         }]);
 
         if (error) {
-          showToast("danger", "Erro ao cadastrar", error.message);
+          showToast("danger", "Erro ao registrar", error.message);
         } else {
           e.target.reset();
           updateFormDateForMonth();
-          carregarDados(); // <-- ATUALIZA LOCAL NA HORA AQUI
+          carregarDados();
+          showToast("success", "Registrado!", "Lançamento adicionado com sucesso.");
         }
       };
     });
 
-    async function checkUser() {
-      const { data: { session } } = await clienteSupabase.auth.getSession();
-      updateAuthUI(session?.user || null);
-    }
-
-    function updateAuthUI(user) {
-      currentUser = user;
-      const loggedOutDiv = document.getElementById("auth-logged-out");
-      const loggedInDiv = document.getElementById("auth-logged-in");
-
-      if (user) {
-        loggedOutDiv.style.display = "none";
-        loggedInDiv.style.display = "flex";
-        document.getElementById("user-display").textContent = `Conectado: ${user.email}`;
-        carregarDados();
-        inscreverRealtime();
-      } else {
-        loggedOutDiv.style.display = "flex";
-        loggedInDiv.style.display = "none";
-        dados = [];
-        if (realtimeChannel) clienteSupabase.removeChannel(realtimeChannel);
-        render();
-      }
-    }
-
-    // --- GERADOR DE PDF ---
+    // --- PDF EXPORT ---
     document.getElementById("btn-export").onclick = () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const relatorio = dados.filter(item => monthFilter === "all" || monthKeyFromDate(item.data) === monthFilter);
-      const ganhos = relatorio.filter(item => item.tipo === "ganho").reduce((total, item) => total + parseNumber(item.valor), 0);
-      const despesas = relatorio.filter(item => item.tipo !== "ganho").reduce((total, item) => total + parseNumber(item.valor), 0);
-      const pendencias = relatorio.filter(item => !item.pago).length;
+      const ganhos = relatorio.filter(item => item.tipo === "ganho").reduce((t, i) => t + parseNumber(i.valor), 0);
+      const despesas = relatorio.filter(item => item.tipo !== "ganho").reduce((t, i) => t + parseNumber(i.valor), 0);
       const periodo = monthFilter === "all" ? "Todo o histórico" : monthLabelPt(monthFilter);
 
-      doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 38, "F");
-      doc.setTextColor(255, 255, 255); doc.setFontSize(17); doc.setFont("helvetica", "bold"); doc.text("MEU DINHEIRO ORGANIZADO", 14, 16);
-      doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text("Relatório financeiro - " + periodo, 14, 25);
-      doc.setFontSize(9); doc.text("Gerado em: " + new Date().toLocaleDateString("pt-BR"), 14, 32);
-
-      const cards = [
-        { titulo: "GANHOS", valor: formatBRL(ganhos), cor: [22, 163, 74] },
-        { titulo: "DESPESAS", valor: formatBRL(despesas), cor: [239, 68, 68] },
-        { titulo: "SALDO", valor: formatBRL(ganhos - despesas), cor: [14, 165, 233] }
-      ];
-
-      cards.forEach((card, index) => {
-        const x = 14 + index * 63;
-        doc.setFillColor(245, 247, 252); doc.roundedRect(x, 46, 58, 24, 3, 3, "F");
-        doc.setFontSize(8); doc.setTextColor(100, 116, 139); doc.text(card.titulo, x + 4, 53);
-        doc.setFontSize(10); doc.setTextColor(...card.cor); doc.setFont("helvetica", "bold"); doc.text(card.valor, x + 4, 63);
-      });
-
-      doc.setFontSize(10); doc.setTextColor(60, 60, 60); doc.text("Lancamentos pendentes: " + pendencias, 14, 78);
-
-      const formatarData = d => d ? d.split("-").reverse().join("/") : "-";
-      const limparCategoria = texto => String(texto || "").replace(/[^\p{L}\p{N}\s/.-]/gu, "").trim();
+      doc.setFillColor(6, 78, 59); doc.rect(0, 0, 210, 36, "F");
+      doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("YA FINANÇAS - RELATÓRIO", 14, 15);
+      doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text("Período: " + periodo, 14, 23);
+      doc.text("Gerado em: " + new Date().toLocaleDateString("pt-BR"), 14, 30);
 
       const linhas = [...relatorio].sort((a, b) => (a.data || "").localeCompare(b.data || "")).map(item => [
-        formatarData(item.data), item.desc, limparCategoria(item.categoria),
-        item.tipo === "ganho" ? "Ganho" : item.tipo === "fixo" ? "Fixo" : "Variavel",
-        item.pago ? "Pago" : "Pendente", formatBRL(item.valor)
+        item.data ? item.data.split("-").reverse().join("/") : "-",
+        item.desc,
+        item.categoria,
+        item.tipo === "ganho" ? "Ganho" : item.tipo === "fixo" ? "Fixo" : "Variável",
+        item.pago ? "Pago" : "Pendente",
+        formatBRL(item.valor)
       ]);
 
       doc.autoTable({
-        startY: 84, head: [["Data", "Descricao", "Categoria", "Tipo", "Status", "Valor"]],
-        body: linhas.length ? linhas : [["-", "Nenhum lancamento encontrado", "-", "-", "-", "-"]],
+        startY: 44, head: [["Data", "Descrição", "Categoria", "Tipo", "Status", "Valor"]],
+        body: linhas.length ? linhas : [["-", "Nenhum lançamento", "-", "-", "-", "-"]],
         theme: "striped", styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [245, 247, 252] }, margin: { left: 14, right: 14 }
+        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
+        margin: { left: 14, right: 14 }
       });
 
-      doc.save(`relatorio_${monthFilter}.pdf`);
-      showToast("success", "PDF gerado!", "Seu relatório foi exportado.");
+      doc.save(`relatorio_ya_financas_${monthFilter}.pdf`);
+      showToast("success", "PDF Exportado", "Relatório descarregado com sucesso.");
     };
 
-    // --- INTERFACE E CONTROLES ---
+    // --- MODAL CONTROLS ---
     const overlay = document.getElementById("overlay");
     let modalAction = null;
     const openModal = ({ title, text, okText="Confirmar", onOk }) => {
@@ -568,15 +563,21 @@
       document.getElementById("m-text").textContent = text;
       document.getElementById("m-ok").textContent = okText;
       modalAction = onOk;
-      overlay.style.display = "flex";
+      overlay.classList.remove("hidden");
+      overlay.classList.add("flex");
     };
-    document.getElementById("m-cancel").onclick = () => overlay.style.display = "none";
-    document.getElementById("m-ok").onclick = () => { if(modalAction) modalAction(); overlay.style.display = "none"; };
+    document.getElementById("m-cancel").onclick = () => { overlay.classList.add("hidden"); overlay.classList.remove("flex"); };
+    document.getElementById("m-ok").onclick = () => { if(modalAction) modalAction(); overlay.classList.add("hidden"); overlay.classList.remove("flex"); };
 
+    // --- TABS & FILTERS ---
     document.querySelectorAll(".tab").forEach(btn => {
       btn.onclick = () => {
-        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
+        document.querySelectorAll(".tab").forEach(b => {
+          b.classList.remove("bg-emerald-600", "text-white", "shadow-sm", "shadow-emerald-600/20");
+          b.classList.add("bg-white", "text-slate-600", "border", "border-slate-200");
+        });
+        btn.classList.add("bg-emerald-600", "text-white", "shadow-sm", "shadow-emerald-600/20");
+        btn.classList.remove("bg-white", "text-slate-600", "border", "border-slate-200");
         abaAtiva = btn.dataset.t; render();
       };
     });
@@ -603,9 +604,9 @@
     function syncMonthUI(){
       const isAll = monthFilter === "all";
       monthSelect.disabled = isAll;
-      document.getElementById("label-ganhos").textContent = isAll ? "Ganhos (todos)" : "Ganhos (mês)";
-      document.getElementById("label-despesas").textContent = isAll ? "Despesas (todos)" : "Despesas (mês)";
-      document.getElementById("label-saldo").textContent = isAll ? "Saldo (todos)" : "Saldo (mês)";
+      document.getElementById("label-ganhos").textContent = isAll ? "Ganhos (total)" : "Ganhos (mês)";
+      document.getElementById("label-despesas").textContent = isAll ? "Despesas (total)" : "Despesas (mês)";
+      document.getElementById("label-saldo").textContent = isAll ? "Saldo (total)" : "Saldo (mês)";
       if(!isAll) monthSelect.value = monthFilter;
       updateFormDateForMonth();
     }
@@ -636,6 +637,50 @@
       return list;
     }
 
+    // --- CHART & RENDER ---
+    function renderChart(list) {
+      const expenses = list.filter(x => x.tipo !== "ganho");
+      const cats = {};
+      expenses.forEach(e => {
+        cats[e.categoria] = (cats[e.categoria] || 0) + parseNumber(e.valor);
+      });
+
+      const labels = Object.keys(cats);
+      const values = Object.values(cats);
+
+      const ctx = document.getElementById("chart").getContext("2d");
+      const emptyChart = document.getElementById("emptyChart");
+
+      if (chartInstance) chartInstance.destroy();
+
+      if (labels.length === 0) {
+        emptyChart.classList.remove("hidden");
+        return;
+      } else {
+        emptyChart.classList.add("hidden");
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: ['#10b981', '#065f46', '#34d399', '#047857', '#6ee7b7', '#059669', '#a7f3d0'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
     function render(){
       const list = applyFilters();
       let g = 0, d = 0, p = 0;
@@ -651,23 +696,42 @@
 
       const tbody = document.getElementById("tabela");
       tbody.innerHTML = "";
-      document.getElementById("emptyTable").style.display = list.length === 0 ? "block" : "none";
+      const emptyTable = document.getElementById("emptyTable");
+
+      if (list.length === 0) {
+        emptyTable.classList.remove("hidden");
+      } else {
+        emptyTable.classList.add("hidden");
+      }
 
       list.forEach(item => {
         const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50/80 transition-colors";
+        const dataFmt = item.data ? item.data.split("-").reverse().join("/") : "—";
+        const isGanho = item.tipo === "ganho";
+        
         tr.innerHTML = `
-          <td class="muted">${item.data || "—"}</td>
-          <td style="font-weight:1000">${item.desc}</td>
-          <td><span class="chip ${item.tipo}"><span class="dot"></span>${item.categoria}</span></td>
-          <td class="v ${item.tipo === "ganho" ? "g" : "d"}">${formatBRL(item.valor)}</td>
-          <td><button class="pill ${item.pago ? "pago" : "pendente"}" onclick="toggleStatus(${item.id})">${item.pago ? "PAGO" : "PENDENTE"}</button></td>
-          <td><button class="icon-btn" onclick="requestDelete(${item.id})">🗑️</button></td>
+          <td class="py-3 px-4 text-slate-400 font-medium">${dataFmt}</td>
+          <td class="py-3 px-4 font-bold text-slate-900">${item.desc}</td>
+          <td class="py-3 px-4"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200/60">${item.categoria}</span></td>
+          <td class="py-3 px-4 font-extrabold ${isGanho ? 'text-emerald-600' : 'text-slate-800'}">${formatBRL(item.valor)}</td>
+          <td class="py-3 px-4">
+            <button onclick="toggleStatus(${item.id})" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase transition-all ${item.pago ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+              ${item.pago ? 'Pago' : 'Pendente'}
+            </button>
+          </td>
+          <td class="py-3 px-4 text-center">
+            <button onclick="requestDelete(${item.id})" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 transition-all inline-flex items-center justify-center">
+              <i class="fa-regular fa-trash-can text-xs"></i>
+            </button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
+
+      renderChart(list);
     }
 
-    // Inicialização
     buildMonthSelect();
     monthFilter = currentMonthKey();
     syncMonthUI();
