@@ -86,7 +86,7 @@
   <!-- MAIN APP CONTAINER -->
   <div id="app-container" class="flex-1 flex flex-col hidden">
     
-    <!-- HEADER BAR (Organizze Emerald Topbar) -->
+    <!-- HEADER BAR -->
     <header class="bg-emerald-700 text-white shadow-md sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -95,7 +95,7 @@
           </div>
           <div>
             <h1 class="font-bold text-base leading-tight tracking-tight">YA Finanças</h1>
-            <p class="text-[11px] text-emerald-200 font-medium">Controle Financeiro & Dashboard</p>
+            <p class="text-[11px] text-emerald-200 font-medium">Yudi & Ana no controle</p>
           </div>
         </div>
 
@@ -111,14 +111,25 @@
     <!-- CONTENT WRAPPER -->
     <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
 
-      <!-- MONTH BAR & ACTIONS -->
+      <!-- MASTER GLOBAL FILTERS (MÊS E CARTEIRA) -->
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Bloco do Mês -->
           <span class="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline-block"><i class="fa-regular fa-calendar mr-1"></i> Período:</span>
           <button id="prevMonth" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all"><i class="fa-solid fa-chevron-left text-xs"></i></button>
           <select id="monthSelect" class="bg-slate-50 border border-slate-200 text-slate-800 font-bold px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"></select>
           <button id="nextMonth" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-          <button id="monthAll" class="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl text-xs font-bold transition-all">Todos</button>
+          <button id="monthAll" class="bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold transition-all">Todos</button>
+          
+          <div class="w-px h-6 bg-slate-200 mx-2 hidden md:block"></div>
+          
+          <!-- Bloco de Visão Global (Carteira) -->
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:inline-block"><i class="fa-solid fa-wallet mr-1"></i> Visão:</span>
+          <select id="global-conta" class="bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm cursor-pointer hover:bg-emerald-100 transition-all">
+            <option value="all">Ver Tudo Misturado</option>
+            <option value="salario">💰 Somente Salário (Geral)</option>
+            <option value="beneficios">💳 Somente Benefícios (VA/VR)</option>
+          </select>
         </div>
 
         <div class="flex items-center gap-2">
@@ -130,7 +141,6 @@
 
       <!-- KPIS / METRICS CARDS -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Ganhos -->
         <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p id="label-ganhos" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ganhos (mês)</p>
@@ -140,7 +150,6 @@
             <i class="fa-solid fa-arrow-trend-up"></i>
           </div>
         </div>
-        <!-- Despesas -->
         <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p id="label-despesas" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Despesas (mês)</p>
@@ -150,7 +159,6 @@
             <i class="fa-solid fa-arrow-trend-down"></i>
           </div>
         </div>
-        <!-- Saldo -->
         <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p id="label-saldo" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo (mês)</p>
@@ -160,7 +168,6 @@
             <i class="fa-solid fa-wallet"></i>
           </div>
         </div>
-        <!-- Pendências -->
         <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pendências</p>
@@ -188,11 +195,11 @@
           <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
             <div>
               <h3 class="font-bold text-slate-900 text-base">Lista de Lançamentos</h3>
-              <p class="text-xs text-slate-500">Filtrados pelo período selecionado</p>
+              <p class="text-xs text-slate-500">Exibindo dados da visão selecionada acima</p>
             </div>
           </div>
 
-          <!-- TOOLBAR FILTERS -->
+          <!-- TOOLBAR FILTERS (Only Text and Status now) -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <div class="relative">
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs"><i class="fa-solid fa-search"></i></span>
@@ -222,6 +229,7 @@
                 <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
                   <th class="py-3 px-4">Data</th>
                   <th class="py-3 px-4">Descrição</th>
+                  <th class="py-3 px-4">Carteira</th>
                   <th class="py-3 px-4">Categoria</th>
                   <th class="py-3 px-4">Valor</th>
                   <th class="py-3 px-4">Status</th>
@@ -232,7 +240,7 @@
             </table>
           </div>
           <div id="emptyTable" class="hidden py-10 text-center text-slate-400 text-xs font-bold border border-dashed border-slate-200 rounded-2xl mt-4">
-            Nenhum lançamento encontrado neste período.
+            Nenhum lançamento encontrado para esta visão.
           </div>
         </div>
 
@@ -246,13 +254,21 @@
 
             <form id="form" class="space-y-3.5">
               <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Onde ocorreu?</label>
+                <select class="w-full px-3.5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" id="conta" required>
+                  <option value="salario">💰 Salário (Principal)</option>
+                  <option value="va">🛒 Vale Alimentação (VA)</option>
+                  <option value="vr">🍽️ Vale Refeição (VR)</option>
+                </select>
+              </div>
+              <div>
                 <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição</label>
-                <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="text" id="desc" placeholder="Ex: Salário, Aluguel..." required />
+                <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="text" id="desc" placeholder="Ex: Conta de Luz, Mercado..." required />
               </div>
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Valor (R$)</label>
-                  <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="number" id="valor" placeholder="1500.00" step="0.01" inputmode="decimal" required />
+                  <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="number" id="valor" placeholder="150.00" step="0.01" inputmode="decimal" required />
                 </div>
                 <div>
                   <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data</label>
@@ -343,6 +359,7 @@
     let abaAtiva = "todos";
     let searchTerm = "";
     let statusFilter = "all";
+    let contaFilter = "all"; // Filtro Global
     let sortBy = "new";
     let monthFilter = "all";
     let chartInstance = null;
@@ -385,6 +402,7 @@
           valor: item.valor,
           categoria: item.categoria,
           tipo: item.tipo,
+          conta: item.conta || 'salario',
           data: item.data,
           pago: item.pago
         }));
@@ -495,6 +513,7 @@
         const categoria = document.getElementById("categoria").value;
         const tipo = document.getElementById("tipo").value;
         const data = document.getElementById("data").value || yyyyMMdd(new Date());
+        const conta = document.getElementById("conta").value;
 
         if (!desc || valor <= 0) return;
 
@@ -503,6 +522,7 @@
           valor: valor,
           categoria: categoria,
           tipo: tipo,
+          conta: conta,
           data: data,
           pago: false,
           user_id: currentUser.id
@@ -513,6 +533,10 @@
         } else {
           e.target.reset();
           updateFormDateForMonth();
+          
+          // Mantem no dropdown o tipo de carteira que o usuário acabou de salvar
+          document.getElementById("conta").value = conta; 
+          
           carregarDados();
           showToast("success", "Registrado!", "Lançamento adicionado com sucesso.");
         }
@@ -523,25 +547,27 @@
     document.getElementById("btn-export").onclick = () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const relatorio = dados.filter(item => monthFilter === "all" || monthKeyFromDate(item.data) === monthFilter);
-      const periodo = monthFilter === "all" ? "Todo o histórico" : monthLabelPt(monthFilter);
+      const relatorio = applyFilters(); // Exporta exatamente o que está na tela (Salário ou Benefícios)
+      
+      let periodoInfo = monthFilter === "all" ? "Todo o histórico" : monthLabelPt(monthFilter);
+      let carteiraInfo = contaFilter === "salario" ? " | Carteira: Apenas Salário" : contaFilter === "beneficios" ? " | Carteira: Apenas VA/VR" : " | Todas as Carteiras";
 
       doc.setFillColor(6, 78, 59); doc.rect(0, 0, 210, 36, "F");
       doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("YA FINANÇAS - RELATÓRIO", 14, 15);
-      doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text("Período: " + periodo, 14, 23);
+      doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text("Filtro: " + periodoInfo + carteiraInfo, 14, 23);
       doc.text("Gerado em: " + new Date().toLocaleDateString("pt-BR"), 14, 30);
 
       const linhas = [...relatorio].sort((a, b) => (a.data || "").localeCompare(b.data || "")).map(item => [
         item.data ? item.data.split("-").reverse().join("/") : "-",
         item.desc,
+        item.conta === 'va' ? 'VA' : item.conta === 'vr' ? 'VR' : 'Salário',
         item.categoria,
         item.tipo === "ganho" ? "Ganho" : item.tipo === "fixo" ? "Fixo" : "Variável",
-        item.pago ? "Pago" : "Pendente",
         formatBRL(item.valor)
       ]);
 
       doc.autoTable({
-        startY: 44, head: [["Data", "Descrição", "Categoria", "Tipo", "Status", "Valor"]],
+        startY: 44, head: [["Data", "Descrição", "Conta", "Categoria", "Tipo", "Valor"]],
         body: linhas.length ? linhas : [["-", "Nenhum lançamento", "-", "-", "-", "-"]],
         theme: "striped", styles: { fontSize: 8, cellPadding: 3 },
         headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
@@ -581,6 +607,10 @@
 
     document.getElementById("q").oninput = (e) => { searchTerm = e.target.value.trim().toLowerCase(); render(); };
     document.getElementById("f-status").onchange = (e) => { statusFilter = e.target.value; render(); };
+    
+    // O FILTRO GLOBAL AGORA ESTÁ NO TOPO DA TELA
+    document.getElementById("global-conta").onchange = (e) => { contaFilter = e.target.value; render(); };
+    
     document.getElementById("f-sort").onchange = (e) => { sortBy = e.target.value; render(); };
 
     const monthSelect = document.getElementById("monthSelect");
@@ -624,6 +654,11 @@
       if(abaAtiva !== "todos") list = list.filter(x => x.tipo === abaAtiva);
       if(statusFilter === "pago") list = list.filter(x => x.pago);
       if(statusFilter === "pendente") list = list.filter(x => !x.pago);
+      
+      // Lógica do filtro Global (Salário vs Benefícios)
+      if(contaFilter === "salario") list = list.filter(x => x.conta === "salario");
+      if(contaFilter === "beneficios") list = list.filter(x => x.conta === "va" || x.conta === "vr");
+      
       if(searchTerm) list = list.filter(x => (x.desc||"").toLowerCase().includes(searchTerm) || (x.categoria||"").toLowerCase().includes(searchTerm));
 
       const getTime = (x) => x.data ? new Date(x.data).getTime() : (Number(x.id) || 0);
@@ -707,9 +742,13 @@
         const dataFmt = item.data ? item.data.split("-").reverse().join("/") : "—";
         const isGanho = item.tipo === "ganho";
         
+        const contaBadge = item.conta === 'va' ? '🛒 VA' : item.conta === 'vr' ? '🍽️ VR' : '💰 Salário';
+        const contaStyle = (item.conta === 'va' || item.conta === 'vr') ? 'bg-blue-50 text-blue-700 border-blue-200/60' : 'bg-slate-100 text-slate-700 border-slate-200/60';
+        
         tr.innerHTML = `
           <td class="py-3 px-4 text-slate-400 font-medium">${dataFmt}</td>
           <td class="py-3 px-4 font-bold text-slate-900">${item.desc}</td>
+          <td class="py-3 px-4"><span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold border ${contaStyle}">${contaBadge}</span></td>
           <td class="py-3 px-4"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200/60">${item.categoria}</span></td>
           <td class="py-3 px-4 font-extrabold ${isGanho ? 'text-emerald-600' : 'text-slate-800'}">${formatBRL(item.valor)}</td>
           <td class="py-3 px-4">
