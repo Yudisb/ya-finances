@@ -789,9 +789,11 @@
 
         tr.innerHTML = `
           <td class="py-3 px-4 text-slate-400 font-medium">${dataFmt}</td>
-          <td class="py-3 px-4">
+        <td class="py-3 px-4">
             <div class="font-bold text-slate-900">${item.desc}</div>
-            <div class="text-[10px] font-bold text-slate-400 mt-0.5"><i class="fa-regular fa-user mr-1"></i>${pessoaIcon}</div>
+            <div class="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-xs font-bold text-slate-500 border border-slate-200">
+              <i class="fa-regular fa-user mr-1.5"></i>${pessoaIcon}
+            </div>
           </td>
           <td class="py-3 px-4"><span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold border ${contaStyle}">${contaBadge}</span></td>
           <td class="py-3 px-4"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200/60">${item.categoria}</span></td>
