@@ -117,9 +117,10 @@
           
           <!-- Bloco do Mês -->
           <span class="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline-block"><i class="fa-regular fa-calendar mr-1"></i> Período:</span>
-          <button id="prevMonth" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+          <button id="prevMonth" type="button" aria-label="Mês anterior" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all"><i class="fa-solid fa-chevron-left text-xs"></i></button>
           <select id="monthSelect" class="bg-slate-50 border border-slate-200 text-slate-800 font-bold px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"></select>
-          <button id="nextMonth" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+          <button id="nextMonth" type="button" aria-label="Próximo mês" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+          <button id="monthAll" type="button" title="Ver todos os meses" class="px-3 h-9 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all whitespace-nowrap">Todos</button>
           
           <div class="w-px h-6 bg-slate-200 mx-2 hidden lg:block"></div>
           
@@ -384,8 +385,8 @@
     let abaAtiva = "todos";
     let searchTerm = "";
     let statusFilter = "all";
-    let contaFilter = "all"; // Filtro Global de Carteira
-    let pessoaFilter = "all"; // Filtro Global de Pessoa
+    let contaFilter = "all"; 
+    let pessoaFilter = "all"; 
     let sortBy = "new";
     let monthFilter = "all";
     let chartInstance = null;
@@ -434,7 +435,8 @@
           pago: item.pago
         }));
         buildMonthSelect();
-        syncMonthUI();
+        // false = não mexe na data do formulário (senão ela reseta a cada atualização em tempo real)
+        syncMonthUI(false);
         render();
       }
     }
@@ -563,7 +565,6 @@
           e.target.reset();
           updateFormDateForMonth();
           
-          // Mantem as seleções para facilitar a digitação contínua
           document.getElementById("conta").value = conta; 
           document.getElementById("pessoa").value = pessoa; 
           
@@ -573,38 +574,151 @@
       };
     });
 
-    // --- PDF EXPORT ---
+    // --- NOVO EXPORTADOR DE PDF DIVIDIDO ---
     document.getElementById("btn-export").onclick = () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const relatorio = applyFilters(); 
       
       let periodoInfo = monthFilter === "all" ? "Todo o histórico" : monthLabelPt(monthFilter);
-      let carteiraInfo = contaFilter === "salario" ? " | Salário" : contaFilter === "va" ? " | VA" : contaFilter === "vc" ? " | VC" : " | Todas";
+      let carteiraInfo = contaFilter === "salario" ? " | Salário" : contaFilter === "va" ? " | VA" : contaFilter === "vc" ? " | VC" : " | Todas as Carteiras";
       let pessoaInfo = pessoaFilter === "Yudi" ? " | Yudi" : pessoaFilter === "Ana" ? " | Ana" : " | Casal";
 
-      doc.setFillColor(6, 78, 59); doc.rect(0, 0, 210, 36, "F");
-      doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("YA FINANÇAS - RELATÓRIO", 14, 15);
-      doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text("Filtros: " + periodoInfo + carteiraInfo + pessoaInfo, 14, 23);
+      // Cabeçalho verde escuro
+      doc.setFillColor(6, 78, 59); 
+      doc.rect(0, 0, 210, 36, "F");
+      doc.setTextColor(255, 255, 255); 
+      doc.setFontSize(16); 
+      doc.setFont("helvetica", "bold"); 
+      doc.text("YA FINANÇAS - RELATÓRIO DETALHADO", 14, 15);
+      doc.setFontSize(10); 
+      doc.setFont("helvetica", "normal"); 
+      doc.text("Filtros: " + periodoInfo + carteiraInfo + pessoaInfo, 14, 23);
       doc.text("Gerado em: " + new Date().toLocaleDateString("pt-BR"), 14, 30);
 
-      const linhas = [...relatorio].sort((a, b) => (a.data || "").localeCompare(b.data || "")).map(item => [
-        item.data ? item.data.split("-").reverse().join("/") : "-",
-        item.desc,
-        item.pessoa,
-        item.conta === 'va' ? 'VA' : item.conta === 'vc' ? 'VC' : 'Salário',
-        item.categoria,
-        item.tipo === "ganho" ? "Ganho" : item.tipo === "fixo" ? "Fixo" : "Variável",
-        formatBRL(item.valor)
-      ]);
+      // Função para remover emojis para o PDF não bugar
+      const removeEmojis = (str) => (str || '').replace(/[^\x00-\x7FÀ-ÿ]/g, '').trim();
 
-      doc.autoTable({
-        startY: 44, head: [["Data", "Descrição", "Titular", "Conta", "Categoria", "Tipo", "Valor"]],
-        body: linhas.length ? linhas : [["-", "Nenhum lançamento", "-", "-", "-", "-", "-"]],
-        theme: "striped", styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
-        margin: { left: 14, right: 14 }
+      let currentY = 44;
+      let hasAnyData = false;
+
+      // Definição das carteiras para iterar e criar os "quadrados"
+      const carteirasPDF = [
+        { id: 'salario', nome: 'CARTEIRA: SALÁRIO' },
+        { id: 'va', nome: 'CARTEIRA: VALE ALIMENTAÇÃO (VA)' },
+        { id: 'vc', nome: 'CARTEIRA: VALE COMBUSTÍVEL (VC)' }
+      ];
+
+      carteirasPDF.forEach(contaDef => {
+        // Pega só os itens daquela carteira
+        const itemsConta = relatorio.filter(x => x.conta === contaDef.id);
+        if(itemsConta.length === 0) return; // Pula se estiver vazio
+        
+        hasAnyData = true;
+
+        // Verifica se precisa criar nova página para não cortar o título
+        if (currentY > 250) { doc.addPage(); currentY = 20; }
+
+        // Título da Carteira
+        doc.setTextColor(6, 78, 59); 
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(contaDef.nome, 14, currentY);
+        currentY += 6;
+
+        const ganhos = itemsConta.filter(x => x.tipo === 'ganho');
+        const gastos = itemsConta.filter(x => x.tipo !== 'ganho');
+
+        const totalGanhos = ganhos.reduce((acc, curr) => acc + parseNumber(curr.valor), 0);
+        const totalGastos = gastos.reduce((acc, curr) => acc + parseNumber(curr.valor), 0);
+
+        // --- TABELA 1: GANHOS (Verde) ---
+        if (ganhos.length > 0) {
+          doc.setTextColor(16, 185, 129); // Verde
+          doc.setFontSize(10);
+          doc.text("Receitas (Ganhos)", 14, currentY);
+          
+          const linhasGanhos = ganhos.sort((a,b) => (a.data||"").localeCompare(b.data||"")).map(item => [
+            item.data ? item.data.split("-").reverse().join("/") : "-",
+            item.desc,
+            item.pessoa,
+            removeEmojis(item.categoria), // Categoria limpa (sem os caracteres estranhos)
+            formatBRL(item.valor)
+          ]);
+
+          doc.autoTable({
+            startY: currentY + 3,
+            head: [["Data", "Descrição", "Titular", "Categoria", "Valor"]],
+            body: linhasGanhos,
+            theme: "plain",
+            styles: { fontSize: 8, cellPadding: 2, textColor: [60,60,60] },
+            headStyles: { fillColor: [236, 253, 245], textColor: [16, 185, 129], fontStyle: "bold" },
+            margin: { left: 14, right: 14 },
+            didDrawPage: function (data) { currentY = data.cursor.y; }
+          });
+          currentY += 4;
+        }
+
+        // --- TABELA 2: GASTOS (Vermelho) ---
+        if (gastos.length > 0) {
+          if (currentY > 250) { doc.addPage(); currentY = 20; }
+
+          doc.setTextColor(225, 29, 72); // Vermelho
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "bold");
+          doc.text("Despesas (Gastos)", 14, currentY);
+          
+          const linhasGastos = gastos.sort((a,b) => (a.data||"").localeCompare(b.data||"")).map(item => [
+            item.data ? item.data.split("-").reverse().join("/") : "-",
+            item.desc,
+            item.pessoa,
+            removeEmojis(item.categoria),
+            item.tipo === 'fixo' ? 'Fixo' : 'Variável',
+            formatBRL(item.valor)
+          ]);
+
+          doc.autoTable({
+            startY: currentY + 3,
+            head: [["Data", "Descrição", "Titular", "Categoria", "Tipo", "Valor"]],
+            body: linhasGastos,
+            theme: "plain",
+            styles: { fontSize: 8, cellPadding: 2, textColor: [60,60,60] },
+            headStyles: { fillColor: [255, 241, 242], textColor: [225, 29, 72], fontStyle: "bold" },
+            margin: { left: 14, right: 14 },
+            didDrawPage: function (data) { currentY = data.cursor.y; }
+          });
+          currentY += 4;
+        }
+
+        // --- QUADRO DE RESUMO DA CARTEIRA ---
+        if (currentY > 260) { doc.addPage(); currentY = 20; }
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(14, currentY, 182, 10, "FD"); // Desenha caixa cinza clara
+        
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Total Ganhos: ${formatBRL(totalGanhos)}   |   Total Gastos: ${formatBRL(totalGastos)}`, 18, currentY + 7);
+        
+        const saldoConta = totalGanhos - totalGastos;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        if(saldoConta >= 0) {
+          doc.setTextColor(16, 185, 129); // Verde se saldo positivo
+        } else {
+          doc.setTextColor(225, 29, 72); // Vermelho se negativo
+        }
+        doc.text(`Saldo: ${formatBRL(saldoConta)}`, 140, currentY + 7);
+        
+        currentY += 20; // Espaço antes da próxima carteira
       });
+
+      // Se todas as carteiras estiverem vazias
+      if (!hasAnyData) {
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(10);
+        doc.text("Nenhum lançamento encontrado para os filtros selecionados.", 14, currentY);
+      }
 
       doc.save(`relatorio_ya_financas_${monthFilter}.pdf`);
       showToast("success", "PDF Exportado", "Relatório descarregado com sucesso.");
@@ -640,13 +754,19 @@
     document.getElementById("q").oninput = (e) => { searchTerm = e.target.value.trim().toLowerCase(); render(); };
     document.getElementById("f-status").onchange = (e) => { statusFilter = e.target.value; render(); };
     
-    // FILTROS GLOBAIS
     document.getElementById("global-conta").onchange = (e) => { contaFilter = e.target.value; render(); };
     document.getElementById("global-pessoa").onchange = (e) => { pessoaFilter = e.target.value; render(); };
     
     document.getElementById("f-sort").onchange = (e) => { sortBy = e.target.value; render(); };
 
+    // =========================================================================
+    // PERÍODO (MÊS)
+    // =========================================================================
     const monthSelect = document.getElementById("monthSelect");
+    const btnPrev = document.getElementById("prevMonth");
+    const btnNext = document.getElementById("nextMonth");
+    const btnAll  = document.getElementById("monthAll");
+
     function buildMonthSelect(){
       const keys = new Set([currentMonthKey()]);
       dados.forEach(x => { const k = monthKeyFromDate(x.data); if(k) keys.add(k); });
@@ -661,20 +781,43 @@
       });
     }
 
-    function syncMonthUI(){
+    // Atualiza a aparência dos controles de período conforme o modo (mês ou "todos")
+    function syncMonthUI(updateForm = true){
       const isAll = monthFilter === "all";
+
       monthSelect.disabled = isAll;
+      btnPrev.disabled = isAll;
+      btnNext.disabled = isAll;
+      [monthSelect, btnPrev, btnNext].forEach(el => {
+        el.classList.toggle("opacity-40", isAll);
+        el.classList.toggle("cursor-not-allowed", isAll);
+      });
+
+      // Botão "Todos": fica verde quando está ativo, e volta ao mês atual ao clicar de novo
+      btnAll.className = "px-3 h-9 rounded-xl text-xs font-bold transition-all whitespace-nowrap " +
+        (isAll ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-600");
+      btnAll.title = isAll ? "Voltar para o mês atual" : "Ver todos os meses";
+
       document.getElementById("label-ganhos").textContent = isAll ? "Ganhos (total)" : "Ganhos (mês)";
       document.getElementById("label-despesas").textContent = isAll ? "Despesas (total)" : "Despesas (mês)";
       document.getElementById("label-saldo").textContent = isAll ? "Saldo (total)" : "Saldo (mês)";
+
       if(!isAll) monthSelect.value = monthFilter;
-      updateFormDateForMonth();
+      if(updateForm) updateFormDateForMonth();
     }
 
-    monthSelect.onchange = () => { monthFilter = monthSelect.value; buildMonthSelect(); syncMonthUI(); render(); };
-    document.getElementById("monthAll").onclick = () => { monthFilter = "all"; syncMonthUI(); render(); };
-    document.getElementById("prevMonth").onclick = () => { if(monthFilter !== "all"){ monthFilter = shiftMonth(monthFilter, -1); buildMonthSelect(); syncMonthUI(); render(); } };
-    document.getElementById("nextMonth").onclick = () => { if(monthFilter !== "all"){ monthFilter = shiftMonth(monthFilter, 1); buildMonthSelect(); syncMonthUI(); render(); } };
+    // Único ponto que troca o período: evita estados inconsistentes
+    function setMonth(key){
+      monthFilter = key;
+      buildMonthSelect();
+      syncMonthUI();
+      render();
+    }
+
+    monthSelect.addEventListener("change", () => setMonth(monthSelect.value));
+    btnPrev.addEventListener("click", () => { if(monthFilter !== "all") setMonth(shiftMonth(monthFilter, -1)); });
+    btnNext.addEventListener("click", () => { if(monthFilter !== "all") setMonth(shiftMonth(monthFilter, 1)); });
+    btnAll.addEventListener("click", () => setMonth(monthFilter === "all" ? currentMonthKey() : "all"));
 
     function updateFormDateForMonth(){
       const today = new Date();
@@ -688,12 +831,10 @@
       if(statusFilter === "pago") list = list.filter(x => x.pago);
       if(statusFilter === "pendente") list = list.filter(x => !x.pago);
       
-      // Lógica de Filtro Global de Carteira (Independente)
       if(contaFilter === "salario") list = list.filter(x => x.conta === "salario");
       if(contaFilter === "va") list = list.filter(x => x.conta === "va");
       if(contaFilter === "vc") list = list.filter(x => x.conta === "vc");
 
-      // Lógica de Filtro Global de Pessoa
       if(pessoaFilter !== "all") list = list.filter(x => x.pessoa === pessoaFilter);
       
       if(searchTerm) list = list.filter(x => (x.desc||"").toLowerCase().includes(searchTerm) || (x.categoria||"").toLowerCase().includes(searchTerm));
@@ -720,7 +861,10 @@
       const ctx = document.getElementById("chart").getContext("2d");
       const emptyChart = document.getElementById("emptyChart");
 
-      if (chartInstance) chartInstance.destroy();
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
 
       if (labels.length === 0) {
         emptyChart.classList.remove("hidden");
@@ -789,9 +933,9 @@
 
         tr.innerHTML = `
           <td class="py-3 px-4 text-slate-400 font-medium">${dataFmt}</td>
-        <td class="py-3 px-4">
+          <td class="py-3 px-4">
             <div class="font-bold text-slate-900">${item.desc}</div>
-            <div class="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-xs font-bold text-slate-500 border border-slate-200">
+            <div class="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-bold text-slate-500 border border-slate-200">
               <i class="fa-regular fa-user mr-1.5"></i>${pessoaIcon}
             </div>
           </td>
@@ -815,8 +959,9 @@
       renderChart(list);
     }
 
-    buildMonthSelect();
+    // --- INICIALIZAÇÃO: começa no mês atual ---
     monthFilter = currentMonthKey();
+    buildMonthSelect();
     syncMonthUI();
   </script>
 </body>
