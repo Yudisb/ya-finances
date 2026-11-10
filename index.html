@@ -124,11 +124,12 @@
           <div class="w-px h-6 bg-slate-200 mx-2 hidden lg:block"></div>
           
           <!-- Bloco de Visão Global (Carteira) -->
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider hidden xl:inline-block"><i class="fa-solid fa-wallet mr-1"></i> Carteira:</span>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider hidden xl:inline-block"><i class="fa-solid fa-wallet mr-1"></i> Visão:</span>
           <select id="global-conta" class="bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm cursor-pointer hover:bg-emerald-100 transition-all">
             <option value="all">Ver Tudo Misturado</option>
-            <option value="salario">💰 Somente Salário (Geral)</option>
-            <option value="beneficios">💳 Somente Benefícios (VA/VR/VC)</option>
+            <option value="salario">💰 Somente Salário</option>
+            <option value="va">🛒 Somente V. Alimentação (VA)</option>
+            <option value="vc">⛽ Somente V. Combustível (VC)</option>
           </select>
 
           <div class="w-px h-6 bg-slate-200 mx-2 hidden lg:block"></div>
@@ -271,7 +272,6 @@
                   <select class="w-full px-3.5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" id="conta" required>
                     <option value="salario">💰 Salário</option>
                     <option value="va">🛒 V. Alimentação</option>
-                    <option value="vr">🍽️ V. Refeição</option>
                     <option value="vc">⛽ V. Combustível</option>
                   </select>
                 </div>
@@ -580,7 +580,7 @@
       const relatorio = applyFilters(); 
       
       let periodoInfo = monthFilter === "all" ? "Todo o histórico" : monthLabelPt(monthFilter);
-      let carteiraInfo = contaFilter === "salario" ? " | Salário" : contaFilter === "beneficios" ? " | Benefícios" : " | Todas";
+      let carteiraInfo = contaFilter === "salario" ? " | Salário" : contaFilter === "va" ? " | VA" : contaFilter === "vc" ? " | VC" : " | Todas";
       let pessoaInfo = pessoaFilter === "Yudi" ? " | Yudi" : pessoaFilter === "Ana" ? " | Ana" : " | Casal";
 
       doc.setFillColor(6, 78, 59); doc.rect(0, 0, 210, 36, "F");
@@ -592,7 +592,7 @@
         item.data ? item.data.split("-").reverse().join("/") : "-",
         item.desc,
         item.pessoa,
-        item.conta === 'va' ? 'VA' : item.conta === 'vr' ? 'VR' : item.conta === 'vc' ? 'VC' : 'Salário',
+        item.conta === 'va' ? 'VA' : item.conta === 'vc' ? 'VC' : 'Salário',
         item.categoria,
         item.tipo === "ganho" ? "Ganho" : item.tipo === "fixo" ? "Fixo" : "Variável",
         formatBRL(item.valor)
@@ -688,9 +688,10 @@
       if(statusFilter === "pago") list = list.filter(x => x.pago);
       if(statusFilter === "pendente") list = list.filter(x => !x.pago);
       
-      // Lógica de Filtro Global de Carteira (agora inclui VC)
+      // Lógica de Filtro Global de Carteira (Independente)
       if(contaFilter === "salario") list = list.filter(x => x.conta === "salario");
-      if(contaFilter === "beneficios") list = list.filter(x => ["va", "vr", "vc"].includes(x.conta));
+      if(contaFilter === "va") list = list.filter(x => x.conta === "va");
+      if(contaFilter === "vc") list = list.filter(x => x.conta === "vc");
 
       // Lógica de Filtro Global de Pessoa
       if(pessoaFilter !== "all") list = list.filter(x => x.pessoa === pessoaFilter);
@@ -781,7 +782,6 @@
         let contaBadge = '';
         let contaStyle = '';
         if(item.conta === 'va') { contaBadge = '🛒 VA'; contaStyle = 'bg-blue-50 text-blue-700 border-blue-200/60'; }
-        else if(item.conta === 'vr') { contaBadge = '🍽️ VR'; contaStyle = 'bg-blue-50 text-blue-700 border-blue-200/60'; }
         else if(item.conta === 'vc') { contaBadge = '⛽ VC'; contaStyle = 'bg-orange-50 text-orange-700 border-orange-200/60'; }
         else { contaBadge = '💰 Salário'; contaStyle = 'bg-slate-100 text-slate-700 border-slate-200/60'; }
         
