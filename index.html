@@ -111,6 +111,19 @@
     <!-- CONTENT WRAPPER -->
     <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
 
+      <!-- NAVEGAÇÃO ENTRE AS DUAS TELAS -->
+      <nav class="flex gap-1.5 rounded-2xl bg-white border border-slate-200/80 p-1.5 shadow-sm w-full sm:w-fit" aria-label="Telas do app">
+        <button type="button" data-view="painel" class="nav-btn flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm">
+          <i class="fa-solid fa-chart-pie"></i> Painel
+        </button>
+        <button type="button" data-view="cofre" class="nav-btn flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-50">
+          <i class="fa-solid fa-piggy-bank"></i> Cofre
+        </button>
+      </nav>
+
+      <!-- ================= TELA 1: PAINEL (o que já existia) ================= -->
+      <div id="view-painel" class="space-y-6">
+
       <!-- MASTER GLOBAL FILTERS -->
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
         <div class="flex flex-wrap items-center gap-2">
@@ -348,12 +361,141 @@
 
       </div>
 
+    </div>
+      <!-- fim da tela Painel -->
+
+      <!-- ================= TELA 2: COFRE ================= -->
+      <div id="view-cofre" class="hidden space-y-6">
+
+        <!-- Aviso (aparece só se as tabelas ainda não existem no Supabase) -->
+        <div id="cofre-aviso" class="hidden rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-800 leading-relaxed"></div>
+
+        <!-- Resumo -->
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div class="col-span-2 lg:col-span-1 bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total guardado (todos os cofres)</p>
+            <h3 id="cofre-kpi-total" class="text-lg sm:text-xl font-extrabold text-emerald-600 mt-1">R$ 0,00</h3>
+          </div>
+          <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">👦 Yudi guardou</p>
+            <h3 id="cofre-kpi-yudi" class="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">R$ 0,00</h3>
+          </div>
+          <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">👩 Ana guardou</p>
+            <h3 id="cofre-kpi-ana" class="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">R$ 0,00</h3>
+          </div>
+        </div>
+
+        <!-- Título + botão de criar -->
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-slate-900 text-base">Seus cofres</h2>
+            <p class="text-xs text-slate-500">Reservas e metas do casal</p>
+          </div>
+          <button id="btn-novo-cofre" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 h-10 rounded-xl text-xs shadow-sm shadow-emerald-600/20 transition-all flex items-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-plus"></i> Novo cofre
+          </button>
+        </div>
+
+        <!-- Aqui o JavaScript desenha um cartão por cofre -->
+        <div id="cofre-lista" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+        <div id="cofre-vazio" class="hidden py-10 px-4 text-center text-slate-400 text-xs font-bold border border-dashed border-slate-300 rounded-2xl bg-white/60">
+          Nenhum cofre ainda.<br>Crie o primeiro: "Viagem", "Reserva de emergência"...
+        </div>
+      </div>
     </main>
 
     <!-- FOOTER -->
     <footer class="mt-auto py-6 text-center text-xs text-slate-400 font-semibold border-t border-slate-200/60 bg-white/40">
       YA Finanças • Sincronização em tempo real via Supabase &bull; Organizze Emerald Theme
     </footer>
+  </div>
+
+  <!-- MODAL: CRIAR / EDITAR COFRE -->
+  <div id="cofre-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <form id="cofre-form" class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 border border-slate-100 max-h-[90vh] overflow-y-auto space-y-4">
+      <input type="hidden" id="cofre-id" />
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h4 id="cofre-modal-titulo" class="font-extrabold text-slate-900 text-lg">Novo cofre</h4>
+          <p class="text-xs text-slate-500">Uma caixinha para um objetivo ou reserva</p>
+        </div>
+        <button type="button" data-fechar="cofre-overlay" aria-label="Fechar" class="w-9 h-9 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div>
+        <label for="cofre-nome" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nome</label>
+        <input id="cofre-nome" type="text" maxlength="60" required placeholder="Ex: Viagem para a Europa" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+      </div>
+      <div>
+        <label for="cofre-tipo" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+        <select id="cofre-tipo" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+          <option value="viagem">✈️ Viagem</option>
+          <option value="reserva">🛟 Reserva de emergência</option>
+          <option value="outro">🎯 Outro objetivo</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="cofre-meta" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Meta (R$)</label>
+          <input id="cofre-meta" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Opcional" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+        </div>
+        <div>
+          <label for="cofre-prazo" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data limite</label>
+          <input id="cofre-prazo" type="date" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+        </div>
+      </div>
+      <p class="text-[11px] font-semibold text-slate-400 -mt-1">Buscando sonhos Yudi e Ana</p>
+      <div class="flex gap-2 pt-1">
+        <button type="button" data-fechar="cofre-overlay" class="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">Cancelar</button>
+        <button type="submit" class="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition-all">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- MODAL: GUARDAR / RETIRAR DINHEIRO -->
+  <div id="mov-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <form id="mov-form" class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 border border-slate-100 max-h-[90vh] overflow-y-auto space-y-4">
+      <input type="hidden" id="mov-cofre-id" />
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h4 id="mov-titulo" class="font-extrabold text-slate-900 text-lg break-words">Cofre</h4>
+          <p id="mov-saldo" class="text-xs font-semibold text-slate-500"></p>
+        </div>
+        <button type="button" data-fechar="mov-overlay" aria-label="Fechar" class="w-9 h-9 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div>
+        <label for="mov-tipo" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">O que fazer</label>
+        <select id="mov-tipo" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+          <option value="deposito">➕ Guardar dinheiro</option>
+          <option value="retirada">➖ Retirar dinheiro</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="mov-valor" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Valor (R$)</label>
+          <input id="mov-valor" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="500.00" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+        </div>
+        <div>
+          <label for="mov-data" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data</label>
+          <input id="mov-data" type="date" required class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+        </div>
+      </div>
+      <div>
+        <label for="mov-pessoa" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Quem</label>
+        <select id="mov-pessoa" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+          <option value="Yudi">👦 Yudi</option>
+          <option value="Ana">👩 Ana</option>
+        </select>
+      </div>
+      <div>
+        <label for="mov-desc" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição (opcional)</label>
+        <input id="mov-desc" type="text" maxlength="80" placeholder="Ex: sobra do mês" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" data-fechar="mov-overlay" class="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">Cancelar</button>
+        <button type="submit" class="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition-all">Confirmar</button>
+      </div>
+    </form>
   </div>
 
   <!-- CONFIRMATION MODAL -->
@@ -416,7 +558,7 @@
       const el = document.createElement("div");
       const bgColor = type === 'danger' ? 'bg-rose-50 border-rose-200 text-rose-800' : type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-slate-200 text-slate-800';
       el.className = `pointer-events-auto p-4 rounded-2xl border shadow-lg text-xs font-semibold flex flex-col gap-0.5 ${bgColor}`;
-      el.innerHTML = `<span class="font-bold text-sm">${title}</span><span>${text}</span>`;
+      el.innerHTML = `<span class="font-bold text-sm">${esc(title)}</span><span>${esc(text)}</span>`;
       wrap.appendChild(el);
       setTimeout(() => el.remove(), 2500);
     };
@@ -487,11 +629,14 @@
         document.getElementById("user-display").textContent = user.email;
         carregarDados();
         inscreverRealtime();
+        carregarCofre();
+        inscreverRealtimeCofre();
       } else {
         authModal.classList.remove("hidden");
         appContainer.classList.add("hidden");
         dados = [];
         if (realtimeChannel) clienteSupabase.removeChannel(realtimeChannel);
+        limparCofre();
       }
     }
 
@@ -990,6 +1135,411 @@
       });
 
       renderChart(list);
+    }
+
+    // =========================================================================
+    // 🐷 COFRE: reservas de dinheiro e metas (viagem, emergência...)
+    // =========================================================================
+    // COMO ESTA PARTE FUNCIONA (leia de cima para baixo):
+    //   1. DADOS     -> duas listas na memória: "cofres" e "movs" (movimentos)
+    //   2. CARREGAR  -> carregarCofre() busca as duas tabelas no Supabase
+    //   3. DESENHAR  -> renderCofre() transforma essas listas em HTML na tela
+    //   4. EVENTOS   -> cliques nos botões abrem janelas e chamam as funções de salvar
+    //   5. REPETIR   -> depois de salvar, carrega de novo e desenha de novo
+    //
+    // O saldo de um cofre NÃO fica guardado em lugar nenhum: é sempre CALCULADO
+    // somando os movimentos (guardou = +, retirou = -). Assim o histórico nunca
+    // se perde e dá para ver quem guardou o quê.
+
+    // ---- 1. DADOS --------------------------------------------------------
+    let cofres = [];                   // [{ id, nome, tipo, meta, prazo }, ...]
+    let movs = [];                     // [{ id, cofre_id, tipo, valor, data, descricao, pessoa }, ...]
+    let cofreErro = null;              // texto do erro, se a busca falhar
+    let historicoAberto = new Set();   // quais cofres estão com o histórico aberto
+    let ultimaPessoa = "Yudi";         // lembra quem guardou por último (já vem selecionado)
+    let ocupado = false;               // trava contra clique duplo (evita lançar 2 vezes)
+    let realtimeCofre = null;          // a "antena" que avisa quando o outro mexe
+
+    const ICONES = { viagem: "✈️", reserva: "🛟", outro: "🎯" };
+    const ROTULOS = { viagem: "Viagem", reserva: "Reserva", outro: "Objetivo" };
+    const PESSOA_ICONE = { Yudi: "👦", Ana: "👩" };
+
+    // ---- Funções pequenas de ajuda --------------------------------------
+    const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;      // arredonda em centavos
+    const fmtData = (iso) => iso ? iso.split("-").reverse().join("/") : "—";   // 2026-11-10 -> 10/11/2026
+    const hojeISO = () => yyyyMMdd(new Date());
+    const cofrePorId = (id) => cofres.find(c => String(c.id) === String(id));
+    const movsDo = (id) => movs.filter(m => String(m.cofre_id) === String(id));
+
+    // Saldo = soma dos depósitos - soma das retiradas (opcional: só de uma pessoa)
+    function saldoDe(cofreId, pessoa) {
+      const total = movsDo(cofreId)
+        .filter(m => !pessoa || m.pessoa === pessoa)
+        .reduce((soma, m) => soma + (m.tipo === "retirada" ? -1 : 1) * parseNumber(m.valor), 0);
+      return round2(total);
+    }
+
+    // Quantos meses faltam até o prazo? (null = o prazo já passou)
+    function mesesAte(prazoIso) {
+      const [a, m, d] = prazoIso.split("-").map(Number);
+      const alvo = new Date(a, m - 1, d);
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      const dias = Math.round((alvo - hoje) / 86400000);   // 86400000 ms = 1 dia
+      if (dias < 0) return null;
+      return Math.max(1, Math.ceil(dias / 30.4375));       // 30,4375 = dias médios de um mês
+    }
+
+    // ---- 2. CARREGAR -----------------------------------------------------
+    async function carregarCofre() {
+      if (!currentUser) return;
+      try {
+        // As duas buscas acontecem ao mesmo tempo (mais rápido que uma depois da outra)
+        const [a, b] = await Promise.all([
+          clienteSupabase.from("cofres").select("*"),
+          clienteSupabase.from("cofre_movs").select("*")
+        ]);
+        const erro = a.error || b.error;
+        if (erro) {
+          cofreErro = erro.message || String(erro);
+        } else {
+          cofreErro = null;
+          cofres = (a.data || []).slice().sort((x, y) => Number(x.id) - Number(y.id));
+          movs = b.data || [];
+        }
+      } catch (err) {
+        cofreErro = err.message || String(err);
+      }
+      renderCofre();
+    }
+
+    // Tempo real: quando o outro mexe, a sua tela atualiza sozinha.
+    let cofreTimer = null;
+    function agendarCarregarCofre() {      // "debounce": junta vários avisos seguidos em uma busca só
+      clearTimeout(cofreTimer);
+      cofreTimer = setTimeout(carregarCofre, 300);
+    }
+    function inscreverRealtimeCofre() {
+      if (realtimeCofre) clienteSupabase.removeChannel(realtimeCofre);
+      realtimeCofre = clienteSupabase
+        .channel("tabelas-cofre")          // canal separado: se o cofre falhar, o painel segue funcionando
+        .on("postgres_changes", { event: "*", schema: "public", table: "cofres" }, agendarCarregarCofre)
+        .on("postgres_changes", { event: "*", schema: "public", table: "cofre_movs" }, agendarCarregarCofre)
+        .subscribe();
+    }
+
+    function limparCofre() {               // chamado quando a pessoa sai (logout)
+      cofres = []; movs = []; cofreErro = null; historicoAberto.clear();
+      if (realtimeCofre) { clienteSupabase.removeChannel(realtimeCofre); realtimeCofre = null; }
+      renderCofre();
+      mostrarView("painel");
+    }
+
+    // ---- 3. DESENHAR -----------------------------------------------------
+    // Cada função "html..." recebe dados e devolve um pedaço de HTML (um texto).
+    // esc() protege: se alguém digitar <script> no nome, vira texto e não código.
+    function htmlMov(m) {
+      const retirada = m.tipo === "retirada";
+      const quem = `${PESSOA_ICONE[m.pessoa] || "👤"} ${esc(m.pessoa)}`;
+      const titulo = m.descricao ? esc(m.descricao) : (retirada ? "Retirada" : "Depósito");
+      return `
+        <div class="flex items-center justify-between gap-2 py-2 border-t border-slate-100">
+          <div class="min-w-0">
+            <div class="text-xs font-semibold text-slate-700 truncate">${titulo}</div>
+            <div class="text-[11px] font-semibold text-slate-400">${fmtData(m.data)} · ${quem}</div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-xs font-extrabold ${retirada ? "text-rose-600" : "text-emerald-600"}">${retirada ? "−" : "+"}${formatBRL(m.valor)}</span>
+            <button type="button" data-action="excluir-mov" data-id="${m.id}" aria-label="Excluir movimento" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 inline-flex items-center justify-center">
+              <i class="fa-regular fa-trash-can text-[11px]"></i>
+            </button>
+          </div>
+        </div>`;
+    }
+
+    function htmlCofre(c) {
+      const id = String(c.id);
+      const saldo = Math.max(0, saldoDe(c.id));
+      const meta = parseNumber(c.meta);
+      const temMeta = meta > 0;
+      const atingida = temMeta && saldo >= meta;
+      const pct = temMeta ? Math.min(100, (saldo / meta) * 100) : 0;
+      const falta = temMeta ? round2(Math.max(0, meta - saldo)) : 0;
+
+      // Linha do plano: só aparece se houver data limite
+      let plano = "";
+      let planoVencido = false;          // true = mostra o aviso em amarelo
+      if (c.prazo) {
+        if (!temMeta || atingida) {
+          plano = `📅 ${fmtData(c.prazo)}`;
+        } else {
+          const meses = mesesAte(c.prazo);
+          planoVencido = meses === null;
+          plano = meses === null
+            ? `⚠️ O prazo (${fmtData(c.prazo)}) já passou`
+            : `📅 ${fmtData(c.prazo)} · faltam ${meses} ${meses === 1 ? "mês" : "meses"} → guardar ≈ ${formatBRL(Math.ceil(falta / meses))} por mês`;
+        }
+      }
+
+      const porPessoa = Object.keys(PESSOA_ICONE).map(p =>
+        `<span>${PESSOA_ICONE[p]} ${p} <b class="text-slate-700">${formatBRL(saldoDe(c.id, p))}</b></span>`).join("");
+
+      const aberto = historicoAberto.has(id);
+      const itens = movsDo(c.id).sort((x, y) => (y.data || "").localeCompare(x.data || "") || Number(y.id) - Number(x.id));
+      const historico = aberto
+        ? `<div class="mt-3 max-h-64 overflow-y-auto">${itens.length ? itens.map(htmlMov).join("") : '<p class="py-3 text-center text-xs font-semibold text-slate-400">Nenhum movimento ainda.</p>'}</div>`
+        : "";
+
+      return `
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-5 flex flex-col">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-start gap-3 min-w-0">
+              <div class="w-11 h-11 shrink-0 rounded-2xl bg-emerald-50 flex items-center justify-center text-xl">${ICONES[c.tipo] || "🎯"}</div>
+              <div class="min-w-0">
+                <div class="font-bold text-slate-900 text-base break-words">${esc(c.nome)}</div>
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">${ROTULOS[c.tipo] || "Objetivo"}</div>
+              </div>
+            </div>
+            <div class="flex shrink-0 gap-1.5">
+              <button type="button" data-action="editar" data-id="${id}" aria-label="Editar cofre" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 inline-flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
+              <button type="button" data-action="excluir" data-id="${id}" aria-label="Excluir cofre" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 inline-flex items-center justify-center"><i class="fa-regular fa-trash-can text-xs"></i></button>
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-baseline gap-2 flex-wrap">
+            <span class="text-2xl font-extrabold text-slate-900">${formatBRL(saldo)}</span>
+            ${temMeta ? `<span class="text-xs font-semibold text-slate-400">de ${formatBRL(meta)}</span>` : `<span class="text-xs font-semibold text-slate-400">sem meta definida</span>`}
+          </div>
+
+          ${temMeta ? `
+          <div class="mt-2.5 h-2.5 w-full rounded-full bg-slate-100 overflow-hidden" role="progressbar" aria-label="Progresso da meta" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.floor(pct)}">
+            <div class="h-full rounded-full ${atingida ? "bg-emerald-600" : "bg-emerald-500"}" style="width:${pct}%"></div>
+          </div>
+          <div class="mt-1.5 flex items-center justify-between text-[11px] font-bold">
+            <span class="text-slate-500">${Math.floor(pct)}% da meta</span>
+            <span class="${atingida ? "text-emerald-600" : "text-slate-500"}">${atingida ? "🎉 Meta atingida!" : "Faltam " + formatBRL(falta)}</span>
+          </div>` : ""}
+
+          ${plano ? `<div class="mt-3 rounded-xl border px-3 py-2 text-xs font-semibold ${planoVencido ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-emerald-50 border-emerald-100 text-emerald-800"}">${plano}</div>` : ""}
+
+          <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-500">${porPessoa}</div>
+
+          <div class="mt-auto pt-4 flex gap-2">
+            <button type="button" data-action="depositar" data-id="${id}" class="flex-1 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all"><i class="fa-solid fa-plus"></i> Guardar</button>
+            <button type="button" data-action="retirar" data-id="${id}" class="flex-1 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all"><i class="fa-solid fa-minus"></i> Retirar</button>
+            <button type="button" data-action="historico" data-id="${id}" aria-expanded="${aberto}" class="h-10 px-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all"><i class="fa-solid fa-clock-rotate-left"></i> ${itens.length}</button>
+          </div>
+          ${historico}
+        </div>`;
+    }
+
+    function renderCofre() {
+      const aviso = document.getElementById("cofre-aviso");
+      const lista = document.getElementById("cofre-lista");
+      const vazio = document.getElementById("cofre-vazio");
+      const escreve = (idEl, valor) => { document.getElementById(idEl).textContent = formatBRL(valor); };
+
+      // Se a busca falhou, mostra um aviso claro em vez de uma tela vazia
+      if (cofreErro) {
+        const faltaTabela = /relation|does not exist|schema cache|PGRST205|42P01|Could not find the table/i.test(cofreErro);
+        aviso.innerHTML = faltaTabela
+          ? `<strong>Falta criar as tabelas do cofre no Supabase.</strong><br>Abra o <em>SQL Editor</em>, cole o conteúdo do arquivo <code>cofre.sql</code>, clique em <em>Run</em> e recarregue esta página.<br><span class="opacity-70 font-medium">Detalhe técnico: ${esc(cofreErro)}</span>`
+          : `<strong>Não consegui carregar o cofre.</strong><br><span class="opacity-70 font-medium">${esc(cofreErro)}</span>`;
+        aviso.classList.remove("hidden");
+        lista.innerHTML = "";
+        vazio.classList.add("hidden");
+        ["total", "yudi", "ana"].forEach(k => escreve("cofre-kpi-" + k, 0));
+        return;
+      }
+      aviso.classList.add("hidden");
+
+      // Resumo do topo: só o que é "somável" (dinheiro guardado).
+      // A META é de cada cofre e aparece no cartão dele; não existe meta total.
+      let total = 0;
+      const porPessoa = { Yudi: 0, Ana: 0 };
+      cofres.forEach(c => {
+        const saldo = saldoDe(c.id);
+        total += saldo;
+        Object.keys(porPessoa).forEach(p => { porPessoa[p] += saldoDe(c.id, p); });
+      });
+      escreve("cofre-kpi-total", total);
+      escreve("cofre-kpi-yudi", porPessoa.Yudi);
+      escreve("cofre-kpi-ana", porPessoa.Ana);
+
+      // Um cartão por cofre
+      lista.innerHTML = cofres.map(htmlCofre).join("");
+      vazio.classList.toggle("hidden", cofres.length > 0);
+    }
+
+    // ---- 4. EVENTOS ------------------------------------------------------
+    // Alternar entre as telas Painel e Cofre
+    function mostrarView(nome) {
+      document.getElementById("view-painel").classList.toggle("hidden", nome !== "painel");
+      document.getElementById("view-cofre").classList.toggle("hidden", nome !== "cofre");
+      document.querySelectorAll(".nav-btn").forEach(b => {
+        const ativo = b.dataset.view === nome;
+        b.classList.toggle("bg-emerald-600", ativo);
+        b.classList.toggle("text-white", ativo);
+        b.classList.toggle("shadow-sm", ativo);
+        b.classList.toggle("text-slate-600", !ativo);
+        b.classList.toggle("hover:bg-slate-50", !ativo);
+      });
+      if (nome === "painel") render();   // redesenha o gráfico (ele fica sem tamanho enquanto escondido)
+    }
+    document.querySelectorAll(".nav-btn").forEach(b => b.addEventListener("click", () => mostrarView(b.dataset.view)));
+
+    // Abrir/fechar janelas
+    const mostrarModal = (id) => { const el = document.getElementById(id); el.classList.remove("hidden"); el.classList.add("flex"); };
+    const esconderModal = (id) => { const el = document.getElementById(id); el.classList.add("hidden"); el.classList.remove("flex"); };
+    document.querySelectorAll("[data-fechar]").forEach(b => b.addEventListener("click", () => esconderModal(b.dataset.fechar)));
+    ["cofre-overlay", "mov-overlay"].forEach(id => {
+      document.getElementById(id).addEventListener("click", (e) => { if (e.target.id === id) esconderModal(id); });   // clicar fora fecha
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { esconderModal("cofre-overlay"); esconderModal("mov-overlay"); }
+    });
+
+    function abrirCofreModal(c) {          // c vazio = criar novo; c preenchido = editar
+      document.getElementById("cofre-modal-titulo").textContent = c ? "Editar cofre" : "Novo cofre";
+      document.getElementById("cofre-id").value = c ? c.id : "";
+      document.getElementById("cofre-nome").value = c ? c.nome : "";
+      document.getElementById("cofre-tipo").value = c ? c.tipo : "viagem";
+      document.getElementById("cofre-meta").value = c && c.meta != null ? c.meta : "";
+      document.getElementById("cofre-prazo").value = c && c.prazo ? c.prazo : "";
+      mostrarModal("cofre-overlay");
+    }
+
+    function abrirMovModal(cofreId, tipo) {
+      const c = cofrePorId(cofreId);
+      if (!c) return;
+      document.getElementById("mov-cofre-id").value = c.id;
+      document.getElementById("mov-titulo").textContent = `${ICONES[c.tipo] || "🎯"} ${c.nome}`;
+      document.getElementById("mov-saldo").textContent = `Saldo atual: ${formatBRL(saldoDe(c.id))}`;
+      document.getElementById("mov-tipo").value = tipo;
+      document.getElementById("mov-valor").value = "";
+      document.getElementById("mov-data").value = hojeISO();
+      document.getElementById("mov-pessoa").value = ultimaPessoa;
+      document.getElementById("mov-desc").value = "";
+      mostrarModal("mov-overlay");
+    }
+
+    // Botões dentro dos cartões. Um único "ouvinte" na lista inteira resolve todos
+    // (isso se chama "delegação de eventos"): o cartão é refeito a cada atualização,
+    // então ouvir a lista é mais seguro do que ligar cada botão um por um.
+    document.getElementById("cofre-lista").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const id = btn.dataset.id;
+      switch (btn.dataset.action) {
+        case "depositar":   abrirMovModal(id, "deposito"); break;
+        case "retirar":     abrirMovModal(id, "retirada"); break;
+        case "editar":      abrirCofreModal(cofrePorId(id)); break;
+        case "excluir":     pedirExcluirCofre(id); break;
+        case "excluir-mov": pedirExcluirMov(id); break;
+        case "historico":
+          if (historicoAberto.has(id)) historicoAberto.delete(id); else historicoAberto.add(id);
+          renderCofre();
+          break;
+      }
+    });
+    document.getElementById("btn-novo-cofre").onclick = () => abrirCofreModal(null);
+
+    // ---- 5. SALVAR (e repetir o ciclo: carregar + desenhar) --------------
+    document.getElementById("cofre-form").onsubmit = async (e) => {
+      e.preventDefault();
+      if (!currentUser || ocupado) return;
+      const id = document.getElementById("cofre-id").value;
+      const nome = document.getElementById("cofre-nome").value.trim();
+      const meta = parseNumber(document.getElementById("cofre-meta").value);
+      const campos = {
+        nome,
+        tipo: document.getElementById("cofre-tipo").value,
+        meta: meta > 0 ? meta : null,                       // vazio ou 0 = sem meta
+        prazo: document.getElementById("cofre-prazo").value || null
+      };
+      if (!nome) return;
+
+      ocupado = true;
+      try {
+        // Tem id = EDITAR (update). Não tem = CRIAR (insert).
+        const consulta = id
+          ? clienteSupabase.from("cofres").update(campos).eq("id", id)
+          : clienteSupabase.from("cofres").insert([{ ...campos, user_id: currentUser.id }]);
+        const { error } = await consulta;
+        if (error) throw error;
+        esconderModal("cofre-overlay");
+        await carregarCofre();
+        showToast("success", id ? "Cofre atualizado" : "Cofre criado", nome);
+      } catch (err) {
+        showToast("danger", "Erro ao salvar o cofre", err.message || String(err));
+      } finally {
+        ocupado = false;
+      }
+    };
+
+    document.getElementById("mov-form").onsubmit = async (e) => {
+      e.preventDefault();
+      if (!currentUser || ocupado) return;
+      const cofreId = document.getElementById("mov-cofre-id").value;
+      const tipo = document.getElementById("mov-tipo").value;
+      const valor = round2(parseNumber(document.getElementById("mov-valor").value));
+      const pessoa = document.getElementById("mov-pessoa").value;
+      if (valor <= 0) return showToast("danger", "Atenção", "Informe um valor maior que zero.");
+      if (tipo === "retirada" && valor > saldoDe(cofreId)) {
+        return showToast("danger", "Saldo insuficiente", `Esse cofre tem ${formatBRL(saldoDe(cofreId))}.`);
+      }
+
+      ocupado = true;
+      try {
+        const { error } = await clienteSupabase.from("cofre_movs").insert([{
+          cofre_id: cofreId,
+          tipo,
+          valor,
+          data: document.getElementById("mov-data").value || hojeISO(),
+          descricao: document.getElementById("mov-desc").value.trim() || null,
+          pessoa,
+          user_id: currentUser.id
+        }]);
+        if (error) throw error;
+        ultimaPessoa = pessoa;
+        esconderModal("mov-overlay");
+        await carregarCofre();
+        showToast("success", tipo === "retirada" ? "Retirada registrada" : "Dinheiro guardado", formatBRL(valor));
+      } catch (err) {
+        showToast("danger", "Erro ao registrar", err.message || String(err));
+      } finally {
+        ocupado = false;
+      }
+    };
+
+    // Excluir: reaproveita a janela de confirmação que já existia (openModal)
+    function pedirExcluirCofre(id) {
+      const c = cofrePorId(id);
+      if (!c) return;
+      openModal({
+        title: "Excluir cofre",
+        text: `Excluir "${c.nome}" e todo o histórico dele? Isso não pode ser desfeito.`,
+        okText: "Excluir",
+        onOk: async () => {
+          const { error } = await clienteSupabase.from("cofres").delete().eq("id", id);
+          if (error) return showToast("danger", "Erro ao excluir", error.message);
+          historicoAberto.delete(String(id));
+          await carregarCofre();
+          showToast("success", "Cofre excluído", "O cofre e o histórico foram removidos.");
+        }
+      });
+    }
+
+    function pedirExcluirMov(id) {
+      openModal({
+        title: "Excluir movimento",
+        text: "Remover este lançamento do histórico? O saldo será recalculado.",
+        okText: "Excluir",
+        onOk: async () => {
+          const { error } = await clienteSupabase.from("cofre_movs").delete().eq("id", id);
+          if (error) return showToast("danger", "Erro ao excluir", error.message);
+          await carregarCofre();
+        }
+      });
     }
 
     // --- INICIALIZAÇÃO: começa no mês atual ---
