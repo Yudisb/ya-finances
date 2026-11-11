@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#047857">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>YA Finanças | Dashboard Emerald</title>
@@ -124,6 +129,9 @@
       <!-- ================= TELA 1: PAINEL (o que já existia) ================= -->
       <div id="view-painel" class="space-y-6">
 
+      <!-- ALERTAS DE LIMITE POR CATEGORIA (só aparece quando alguma categoria chega perto do limite) -->
+      <div id="alerta-limites" class="hidden space-y-2"></div>
+
       <!-- MASTER GLOBAL FILTERS -->
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
         <div class="flex flex-wrap items-center gap-2">
@@ -223,7 +231,13 @@
               <h3 class="font-bold text-slate-900 text-base">Lista de Lançamentos</h3>
               <p class="text-xs text-slate-500">Exibindo dados dos filtros globais selecionados</p>
             </div>
+            <button id="btn-copiar" type="button" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition-all items-center gap-2 border border-slate-200 whitespace-nowrap">
+              <i class="fa-regular fa-copy text-emerald-600"></i> Copiar do mês anterior
+            </button>
           </div>
+
+          <!-- Sugestão: mês novo sem gastos fixos -->
+          <div id="banner-fixos" class="hidden mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5"></div>
 
           <!-- TOOLBAR FILTERS -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
@@ -341,6 +355,31 @@
                   <option value="variavel">🛒 Gasto Variável</option>
                 </select>
               </div>
+              <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="parcelado" class="w-4 h-4 accent-emerald-600" /> 💳 Compra parcelada
+                </label>
+                <div id="parcelas-box" class="hidden mt-3 space-y-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nº de parcelas</label>
+                      <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="number" id="parcelas-n" min="2" max="60" value="2" inputmode="numeric" />
+                    </div>
+                    <div>
+                      <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Parcela atual</label>
+                      <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="number" id="parcelas-atual" min="1" max="60" value="1" inputmode="numeric" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">O valor digitado acima é</label>
+                    <select class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" id="parcelas-modo">
+                      <option value="parcela">o valor de cada parcela</option>
+                      <option value="total">o total da compra</option>
+                    </select>
+                  </div>
+                  <p id="parcelas-hint" class="text-[11px] font-semibold text-emerald-700 leading-relaxed"></p>
+                </div>
+              </div>
               <button type="submit" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 transition-all text-xs uppercase tracking-wider">
                 <i class="fa-solid fa-plus mr-1"></i> Registrar
               </button>
@@ -355,6 +394,27 @@
               <canvas id="chart"></canvas>
               <div id="emptyChart" class="hidden text-xs text-slate-400 font-bold text-center">Sem despesas no período.</div>
             </div>
+          </div>
+
+          <!-- LIMITES POR CATEGORIA -->
+          <div id="card-limites" class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="font-bold text-slate-900 text-base mb-1">Limites por categoria</h3>
+                <p class="text-xs text-slate-500">Quanto vocês querem gastar por mês</p>
+              </div>
+              <button id="btn-limites" type="button" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 border border-slate-200">
+                <i class="fa-solid fa-sliders text-emerald-600"></i> Definir
+              </button>
+            </div>
+            <div id="limites-lista" class="mt-4 space-y-4"></div>
+          </div>
+
+          <!-- PARCELAS JÁ COMPROMETIDAS (só aparece se houver parcelas futuras) -->
+          <div id="card-parcelas" class="hidden bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+            <h3 class="font-bold text-slate-900 text-base mb-1">Parcelas já comprometidas</h3>
+            <p id="parcelas-resumo" class="text-xs text-slate-500 mb-4"></p>
+            <div id="parcelas-meses" class="space-y-3"></div>
           </div>
 
         </div>
@@ -411,6 +471,97 @@
     </footer>
   </div>
 
+  <!-- MODAL: EDITAR LANÇAMENTO -->
+  <div id="edit-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <form id="edit-form" class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 border border-slate-100 max-h-[92vh] overflow-y-auto space-y-4">
+      <input type="hidden" id="edit-id" />
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h4 class="font-extrabold text-slate-900 text-lg">Editar lançamento</h4>
+          <p id="edit-sub" class="text-xs text-slate-500"></p>
+        </div>
+        <button type="button" data-fechar="edit-overlay" aria-label="Fechar" class="w-9 h-9 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="edit-conta" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Carteira</label>
+          <select id="edit-conta" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"></select>
+        </div>
+        <div>
+          <label for="edit-pessoa" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Titular</label>
+          <select id="edit-pessoa" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"></select>
+        </div>
+      </div>
+      <div>
+        <label for="edit-desc" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição</label>
+        <input id="edit-desc" type="text" maxlength="80" required class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="edit-valor" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Valor (R$)</label>
+          <input id="edit-valor" type="number" min="0.01" step="0.01" inputmode="decimal" required class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+        </div>
+        <div>
+          <label for="edit-data" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data</label>
+          <input id="edit-data" type="date" required class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+        </div>
+      </div>
+      <div>
+        <label for="edit-categoria" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Categoria</label>
+        <select id="edit-categoria" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"></select>
+      </div>
+      <div>
+        <label for="edit-tipo" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+        <select id="edit-tipo" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"></select>
+      </div>
+      <label id="edit-grupo-wrap" class="hidden flex items-start gap-2.5 rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-xs font-semibold text-emerald-800 cursor-pointer">
+        <input type="checkbox" id="edit-grupo" class="w-4 h-4 mt-0.5 accent-emerald-600 shrink-0" />
+        <span>Aplicar também às próximas parcelas (descrição, valor, categoria, carteira, titular e tipo; a data de cada uma continua a mesma)</span>
+      </label>
+      <div class="flex gap-2 pt-1">
+        <button type="button" data-fechar="edit-overlay" class="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">Cancelar</button>
+        <button type="submit" class="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition-all">Salvar alterações</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- MODAL: COPIAR DO MÊS ANTERIOR -->
+  <div id="copy-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 border border-slate-100 max-h-[92vh] overflow-y-auto flex flex-col">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h4 id="copy-titulo" class="font-extrabold text-slate-900 text-lg">Copiar do mês anterior</h4>
+          <p id="copy-sub" class="text-xs text-slate-500"></p>
+        </div>
+        <button type="button" data-fechar="copy-overlay" aria-label="Fechar" class="w-9 h-9 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="mt-3 text-[11px] font-semibold text-slate-400">Marque o que se repete. Os itens entram como <b>pendentes</b> e você ajusta valores depois, se mudaram.</p>
+      <div id="copy-lista" class="mt-3"></div>
+      <div class="flex gap-2 pt-4">
+        <button type="button" data-fechar="copy-overlay" class="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">Cancelar</button>
+        <button type="button" id="copy-ok" class="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition-all">Copiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DEFINIR LIMITES -->
+  <div id="limite-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <form id="limite-form" class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 border border-slate-100 max-h-[92vh] overflow-y-auto space-y-4">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h4 class="font-extrabold text-slate-900 text-lg">Limites por categoria</h4>
+          <p class="text-xs text-slate-500">Valor máximo por mês. Deixe em branco para não ter limite.</p>
+        </div>
+        <button type="button" data-fechar="limite-overlay" aria-label="Fechar" class="w-9 h-9 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="limite-campos" class="space-y-2.5"></div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" data-fechar="limite-overlay" class="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">Cancelar</button>
+        <button type="submit" class="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition-all">Salvar limites</button>
+      </div>
+    </form>
+  </div>
+
   <!-- MODAL: CRIAR / EDITAR COFRE -->
   <div id="cofre-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <form id="cofre-form" class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 border border-slate-100 max-h-[90vh] overflow-y-auto space-y-4">
@@ -444,7 +595,7 @@
           <input id="cofre-prazo" type="date" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
         </div>
       </div>
-      <p class="text-[11px] font-semibold text-slate-400 -mt-1">Buscando sonhos Yudi e Ana</p>
+      <p class="text-[11px] font-semibold text-slate-400 -mt-1">Com meta e data limite, o app calcula quanto guardar por mês.</p>
       <div class="flex gap-2 pt-1">
         <button type="button" data-fechar="cofre-overlay" class="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">Cancelar</button>
         <button type="submit" class="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition-all">Salvar</button>
@@ -503,8 +654,9 @@
     <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 border border-slate-100">
       <h4 id="m-title" class="font-bold text-slate-900 text-base mb-1">Confirmar ação</h4>
       <p id="m-text" class="text-xs text-slate-500 mb-6">Tem certeza?</p>
-      <div class="flex gap-2 justify-end">
+      <div class="flex flex-wrap gap-2 justify-end">
         <button id="m-cancel" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">Cancelar</button>
+        <button id="m-ok2" class="hidden px-4 py-2.5 bg-rose-800 hover:bg-rose-900 text-white font-bold rounded-xl text-xs shadow-sm transition-all">Confirmar 2</button>
         <button id="m-ok" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition-all">Confirmar</button>
       </div>
     </div>
@@ -579,7 +731,11 @@
           conta: item.conta || 'salario',
           pessoa: item.pessoa || 'Yudi',
           data: item.data,
-          pago: item.pago
+          pago: item.pago,
+          // colunas das parcelas (vazias nos lançamentos normais)
+          grupo: item.grupo_parcela || null,
+          parcela: item.parcela_atual || null,
+          parcelas: item.parcelas_total || null
         }));
         buildMonthSelect();
         // false = não mexe na data do formulário (senão ela reseta a cada atualização em tempo real)
@@ -607,6 +763,18 @@
     }
 
     async function requestDelete(id) {
+      const it = dados.find(d => String(d.id) === String(id));
+      if (it && it.grupo && it.parcelas) {
+        const temSeguintes = it.parcela < it.parcelas;
+        return openModal({
+          title: "Excluir parcela",
+          text: `Esta compra é parcelada (${it.parcela}/${it.parcelas}). O que você quer excluir?`,
+          okText: "Só esta parcela",
+          onOk: () => excluirLancamentos(clienteSupabase.from("lancamentos").delete().eq("id", id)),
+          okText2: temSeguintes ? "Esta e as seguintes" : null,
+          onOk2: () => excluirLancamentos(clienteSupabase.from("lancamentos").delete().eq("grupo_parcela", it.grupo).gte("parcela_atual", it.parcela))
+        });
+      }
       openModal({
         title: "Excluir lançamento", text: "Deseja excluir este item permanentemente?", okText: "Excluir",
         onOk: async () => {
@@ -631,12 +799,15 @@
         inscreverRealtime();
         carregarCofre();
         inscreverRealtimeCofre();
+        carregarLimites();
+        inscreverRealtimeLimites();
       } else {
         authModal.classList.remove("hidden");
         appContainer.classList.add("hidden");
         dados = [];
         if (realtimeChannel) clienteSupabase.removeChannel(realtimeChannel);
         limparCofre();
+        limparLimites();
       }
     }
 
@@ -696,30 +867,45 @@
         const pessoa = document.getElementById("pessoa").value;
 
         if (!desc || valor <= 0) return;
+        if (ocupado) return;     // trava contra clique duplo (evita lançar 2 vezes)
 
-        const { error } = await clienteSupabase.from("lancamentos").insert([{
-          descricao: desc,
-          valor: valor,
-          categoria: categoria,
-          tipo: tipo,
-          conta: conta,
-          pessoa: pessoa,
-          data: data,
-          pago: false,
-          user_id: currentUser.id
-        }]);
+        // Monta a LISTA de linhas a gravar: 1 linha (normal) ou várias (parcelado)
+        let linhas;
+        if (document.getElementById("parcelado").checked) {
+          const n = parseInt(document.getElementById("parcelas-n").value, 10);
+          const atual = parseInt(document.getElementById("parcelas-atual").value, 10);
+          const modo = document.getElementById("parcelas-modo").value;
+          if (!(n >= 2 && n <= 60 && atual >= 1 && atual <= n)) {
+            return showToast("danger", "Parcelas inválidas", "Use de 2 a 60 parcelas e uma parcela atual entre 1 e o total.");
+          }
+          const grupo = novoGrupo();     // um código que une todas as parcelas desta compra
+          linhas = gerarParcelas({ valor, modo, n, atual, dataISO: data }).map(p => ({
+            descricao: desc, valor: p.valor, categoria, tipo, conta, pessoa,
+            data: p.data, pago: false, user_id: currentUser.id,
+            parcela_atual: p.parcela, parcelas_total: n, grupo_parcela: grupo
+          }));
+        } else {
+          // lançamento normal: exatamente como era antes (sem colunas novas)
+          linhas = [{ descricao: desc, valor, categoria, tipo, conta, pessoa, data, pago: false, user_id: currentUser.id }];
+        }
+
+        ocupado = true;
+        let error;
+        try { ({ error } = await clienteSupabase.from("lancamentos").insert(linhas)); }
+        finally { ocupado = false; }
 
         if (error) {
-          showToast("danger", "Erro ao registrar", error.message);
+          showToast("danger", "Erro ao registrar", msgErro(error));
         } else {
           e.target.reset();
+          atualizarCaixaParcelas();
           updateFormDateForMonth();
           
           document.getElementById("conta").value = conta; 
           document.getElementById("pessoa").value = pessoa; 
           
           carregarDados();
-          showToast("success", "Registrado!", "Lançamento adicionado com sucesso.");
+          showToast("success", "Registrado!", linhas.length > 1 ? `${linhas.length} parcelas registradas.` : "Lançamento adicionado com sucesso.");
         }
       };
     });
@@ -790,7 +976,7 @@
           
           const linhasGanhos = ganhos.sort((a,b) => (a.data||"").localeCompare(b.data||"")).map(item => [
             item.data ? item.data.split("-").reverse().join("/") : "-",
-            item.desc,
+            descComParcela(item),
             item.pessoa,
             removeEmojis(item.categoria), // Categoria limpa (sem os caracteres estranhos)
             formatBRL(item.valor)
@@ -820,7 +1006,7 @@
           
           const linhasGastos = gastos.sort((a,b) => (a.data||"").localeCompare(b.data||"")).map(item => [
             item.data ? item.data.split("-").reverse().join("/") : "-",
-            item.desc,
+            descComParcela(item),
             item.pessoa,
             removeEmojis(item.categoria),
             item.tipo === 'fixo' ? 'Fixo' : 'Variável',
@@ -876,17 +1062,22 @@
 
     // --- MODAL CONTROLS ---
     const overlay = document.getElementById("overlay");
-    let modalAction = null;
-    const openModal = ({ title, text, okText="Confirmar", onOk }) => {
+    let modalAction = null, modalAction2 = null;
+    const openModal = ({ title, text, okText="Confirmar", onOk, okText2, onOk2 }) => {
       document.getElementById("m-title").textContent = title;
       document.getElementById("m-text").textContent = text;
       document.getElementById("m-ok").textContent = okText;
       modalAction = onOk;
+      const ok2 = document.getElementById("m-ok2");      // segundo botão (opcional)
+      ok2.classList.toggle("hidden", !okText2);
+      if (okText2) ok2.textContent = okText2;
+      modalAction2 = okText2 ? onOk2 : null;
       overlay.classList.remove("hidden");
       overlay.classList.add("flex");
     };
     document.getElementById("m-cancel").onclick = () => { overlay.classList.add("hidden"); overlay.classList.remove("flex"); };
     document.getElementById("m-ok").onclick = () => { if(modalAction) modalAction(); overlay.classList.add("hidden"); overlay.classList.remove("flex"); };
+    document.getElementById("m-ok2").onclick = () => { if(modalAction2) modalAction2(); overlay.classList.add("hidden"); overlay.classList.remove("flex"); };
 
     // --- TABS & FILTERS ---
     document.querySelectorAll(".tab").forEach(btn => {
@@ -1086,7 +1277,7 @@
         tr.innerHTML = `
           <td class="py-3 px-4 text-slate-400 font-medium">${dataFmt}</td>
           <td class="py-3 px-4">
-            <div class="font-bold text-slate-900">${esc(item.desc)}</div>
+            <div class="font-bold text-slate-900">${esc(item.desc)}${badgeParcela(item)}</div>
             <div class="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-bold text-slate-500 border border-slate-200">
               <i class="fa-regular fa-user mr-1.5"></i>${pessoaIcon}
             </div>
@@ -1099,7 +1290,8 @@
               ${item.pago ? 'Pago' : 'Pendente'}
             </button>
           </td>
-          <td class="py-3 px-4 text-center">
+          <td class="py-3 px-4 text-center whitespace-nowrap">
+            <button onclick="abrirEditar(${item.id})" aria-label="Editar lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-400 transition-all inline-flex items-center justify-center mr-1.5"><i class="fa-solid fa-pen text-xs"></i></button>
             <button onclick="requestDelete(${item.id})" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 transition-all inline-flex items-center justify-center">
               <i class="fa-regular fa-trash-can text-xs"></i>
             </button>
@@ -1114,7 +1306,7 @@
         card.innerHTML = `
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <div class="font-bold text-slate-900 text-sm break-words">${esc(item.desc)}</div>
+              <div class="font-bold text-slate-900 text-sm break-words">${esc(item.desc)}${badgeParcela(item)}</div>
               <div class="mt-0.5 text-[11px] font-semibold text-slate-400">${dataFmt} · ${pessoaIcon}</div>
             </div>
             <div class="shrink-0 text-right text-sm font-extrabold ${isGanho ? 'text-emerald-600' : 'text-slate-800'}">${formatBRL(item.valor)}</div>
@@ -1126,6 +1318,7 @@
             </div>
             <div class="flex shrink-0 items-center gap-1.5">
               <button onclick="toggleStatus(${item.id})" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase transition-all ${statusCls}">${item.pago ? 'Pago' : 'Pendente'}</button>
+              <button onclick="abrirEditar(${item.id})" aria-label="Editar lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-400 transition-all inline-flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
               <button onclick="requestDelete(${item.id})" aria-label="Excluir lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 transition-all inline-flex items-center justify-center">
                 <i class="fa-regular fa-trash-can text-xs"></i>
               </button>
@@ -1135,6 +1328,7 @@
       });
 
       renderChart(list);
+      renderExtras();
     }
 
     // =========================================================================
@@ -1391,11 +1585,11 @@
     const mostrarModal = (id) => { const el = document.getElementById(id); el.classList.remove("hidden"); el.classList.add("flex"); };
     const esconderModal = (id) => { const el = document.getElementById(id); el.classList.add("hidden"); el.classList.remove("flex"); };
     document.querySelectorAll("[data-fechar]").forEach(b => b.addEventListener("click", () => esconderModal(b.dataset.fechar)));
-    ["cofre-overlay", "mov-overlay"].forEach(id => {
+    ["cofre-overlay", "mov-overlay", "edit-overlay", "copy-overlay", "limite-overlay"].forEach(id => {
       document.getElementById(id).addEventListener("click", (e) => { if (e.target.id === id) esconderModal(id); });   // clicar fora fecha
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") { esconderModal("cofre-overlay"); esconderModal("mov-overlay"); }
+      if (e.key === "Escape") { ["cofre-overlay", "mov-overlay", "edit-overlay", "copy-overlay", "limite-overlay"].forEach(esconderModal); }
     });
 
     function abrirCofreModal(c) {          // c vazio = criar novo; c preenchido = editar
@@ -1539,6 +1733,479 @@
           if (error) return showToast("danger", "Erro ao excluir", error.message);
           await carregarCofre();
         }
+      });
+    }
+
+    // =========================================================================
+    // ✨ MELHORIAS: editar lançamento · copiar fixos · parcelas · limites
+    // =========================================================================
+    // Quatro recursos novos, todos seguindo o mesmo ciclo do cofre:
+    //   carregar → desenhar → clique → salvar → carregar de novo.
+    // Em cada um você vai ver uma função "pura" (só faz conta, não mexe na tela)
+    // e funções que desenham ou gravam. Separar assim facilita testar e entender.
+
+    // ---- Ajudantes ---------------------------------------------------------
+    const MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+    const mesCurto = (key) => { const [y, m] = key.split("-").map(Number); return `${MESES_CURTOS[m - 1]}/${y}`; };
+    const el = (id) => document.getElementById(id);
+    const acharItem = (id) => dados.find(d => String(d.id) === String(id));
+    const novoGrupo = () => (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+    // "3/10" ao lado da descrição (só em compras parceladas)
+    const badgeParcela = (it) => it.parcelas
+      ? ` <span class="inline-flex items-center align-middle ml-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60 text-[10px] font-bold">${it.parcela}/${it.parcelas}</span>`
+      : "";
+    const descComParcela = (it) => it.parcelas ? `${it.desc} (${it.parcela}/${it.parcelas})` : it.desc;
+
+    // Se o banco ainda não tem as colunas novas, explica o que fazer
+    function msgErro(error) {
+      const m = (error && error.message) || String(error);
+      return /parcela_atual|parcelas_total|grupo_parcela/i.test(m)
+        ? "Falta rodar o melhorias.sql no Supabase (SQL Editor). Detalhe: " + m
+        : m;
+    }
+
+    // Se um select não tem a opção (ex.: categoria antiga), acrescenta, para não perder o dado
+    function garantirOpcao(sel, valor) {
+      if (valor && ![...sel.options].some(o => o.value === valor)) sel.add(new Option(valor, valor));
+    }
+
+    // Os selects da janela de edição são CÓPIAS dos do formulário principal.
+    // Assim, se você criar uma categoria nova lá em cima, ela aparece aqui sozinha.
+    [["conta", "edit-conta"], ["pessoa", "edit-pessoa"], ["categoria", "edit-categoria"], ["tipo", "edit-tipo"]]
+      .forEach(([origem, destino]) => { el(destino).innerHTML = el(origem).innerHTML; });
+
+    async function excluirLancamentos(consulta) {
+      const { error } = await consulta;
+      if (error) return showToast("danger", "Erro ao excluir", msgErro(error));
+      await carregarDados();
+    }
+
+    // =========================================================================
+    // 1) EDITAR LANÇAMENTO
+    // =========================================================================
+    function abrirEditar(id) {
+      const it = acharItem(id);
+      if (!it) return;
+      garantirOpcao(el("edit-categoria"), it.categoria);
+      el("edit-id").value = it.id;
+      el("edit-conta").value = it.conta;
+      el("edit-pessoa").value = it.pessoa;
+      el("edit-desc").value = it.desc || "";
+      el("edit-valor").value = parseNumber(it.valor);
+      el("edit-data").value = it.data || hojeISO();
+      el("edit-categoria").value = it.categoria;
+      el("edit-tipo").value = it.tipo;
+      el("edit-sub").textContent = it.parcelas ? `Parcela ${it.parcela} de ${it.parcelas}` : "Corrija o que estiver errado";
+      // Só oferece "aplicar às seguintes" se existirem parcelas depois desta
+      const temSeguintes = !!(it.grupo && it.parcelas && it.parcela < it.parcelas);
+      el("edit-grupo-wrap").classList.toggle("hidden", !temSeguintes);
+      el("edit-grupo").checked = false;
+      mostrarModal("edit-overlay");
+    }
+
+    el("edit-form").onsubmit = async (e) => {
+      e.preventDefault();
+      if (!currentUser || ocupado) return;
+      const it = acharItem(el("edit-id").value);
+      if (!it) return esconderModal("edit-overlay");
+
+      const campos = {
+        descricao: el("edit-desc").value.trim(),
+        valor: round2(parseNumber(el("edit-valor").value)),
+        categoria: el("edit-categoria").value,
+        tipo: el("edit-tipo").value,
+        conta: el("edit-conta").value,
+        pessoa: el("edit-pessoa").value
+      };
+      const data = el("edit-data").value;
+      if (!campos.descricao || campos.valor <= 0 || !data) {
+        return showToast("danger", "Atenção", "Preencha descrição, valor e data.");
+      }
+      const nasSeguintes = el("edit-grupo").checked && !!it.grupo;
+
+      ocupado = true;
+      try {
+        // update(...) muda só os campos enviados; eq("id", ...) escolhe QUAL linha
+        let r = await clienteSupabase.from("lancamentos").update({ ...campos, data }).eq("id", it.id);
+        if (r.error) throw r.error;
+        if (nasSeguintes) {
+          // mesma compra (grupo) e parcela maior que esta; a data de cada uma não muda
+          r = await clienteSupabase.from("lancamentos").update(campos).eq("grupo_parcela", it.grupo).gt("parcela_atual", it.parcela);
+          if (r.error) throw r.error;
+        }
+        esconderModal("edit-overlay");
+        await carregarDados();
+        showToast("success", "Lançamento atualizado", nasSeguintes ? "Esta parcela e as seguintes foram atualizadas." : campos.descricao);
+      } catch (err) {
+        showToast("danger", "Erro ao salvar", msgErro(err));
+      } finally {
+        ocupado = false;
+      }
+    };
+
+    // =========================================================================
+    // 2) COPIAR FIXOS DO MÊS ANTERIOR
+    // =========================================================================
+    // Função "pura": descobre o que PODE ser copiado (não grava nada).
+    function candidatosCopia(destino) {
+      const origem = shiftMonth(destino, -1);
+      const norm = (t) => String(t || "").trim().toLowerCase();
+      return dados
+        .filter(x => monthKeyFromDate(x.data) === origem && !x.grupo && (x.tipo === "fixo" || x.tipo === "ganho"))
+        .map(x => ({
+          item: x,
+          // já existe igual no mês novo? (mesma descrição, carteira e tipo) → evita duplicar
+          existe: dados.some(y => monthKeyFromDate(y.data) === destino && !y.grupo && y.tipo === x.tipo && y.conta === x.conta && norm(y.desc) === norm(x.desc))
+        }))
+        .sort((a, b) => (a.item.data || "").localeCompare(b.item.data || ""));
+    }
+
+    // Faixa verde de sugestão: aparece sozinha quando o mês ainda não tem nenhum gasto fixo
+    function renderBannerFixos() {
+      const banner = el("banner-fixos");
+      const botao = el("btn-copiar");
+      const mesEspecifico = monthFilter !== "all";
+      botao.classList.toggle("hidden", !mesEspecifico);
+      botao.classList.toggle("inline-flex", mesEspecifico);
+      if (!mesEspecifico) return banner.classList.add("hidden");
+
+      const jaTemFixo = dados.some(x => monthKeyFromDate(x.data) === monthFilter && x.tipo === "fixo" && !x.grupo);
+      const disponiveis = candidatosCopia(monthFilter).filter(c => c.item.tipo === "fixo" && !c.existe);
+      if (jaTemFixo || disponiveis.length === 0) return banner.classList.add("hidden");
+
+      banner.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-xs font-semibold text-emerald-900 min-w-0">
+            <b>${esc(monthLabelPt(monthFilter))}</b> ainda não tem gastos fixos. Quer copiar os
+            ${disponiveis.length} de ${esc(monthLabelPt(shiftMonth(monthFilter, -1)))}?
+          </p>
+          <button type="button" data-action="abrir-copia" class="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-sm transition-all">Revisar e copiar</button>
+        </div>`;
+      banner.classList.remove("hidden");
+    }
+
+    let copiaItens = [];      // o que a janela está mostrando
+    let copiaDestino = null;  // para qual mês vai a cópia
+
+    function linhaCopia(c, i) {
+      const it = c.item;
+      const dia = (it.data || "").slice(8, 10);
+      const marcado = !c.existe && it.tipo === "fixo";     // fixos já vêm marcados; ganhos você escolhe
+      return `
+        <label class="flex items-center gap-3 py-2.5 border-t border-slate-100 ${c.existe ? "opacity-50" : "cursor-pointer"}">
+          <input type="checkbox" data-i="${i}" class="w-5 h-5 accent-emerald-600 shrink-0" ${c.existe ? "disabled" : ""} ${marcado ? "checked" : ""} />
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-bold text-slate-800 truncate">${esc(it.desc)}</span>
+            <span class="block text-[11px] font-semibold text-slate-400">dia ${esc(dia)} · ${esc(it.categoria)}${c.existe ? " · já existe neste mês" : ""}</span>
+          </span>
+          <span class="shrink-0 text-xs font-extrabold ${it.tipo === "ganho" ? "text-emerald-600" : "text-slate-800"}">${formatBRL(it.valor)}</span>
+        </label>`;
+    }
+
+    const copiaSelecionados = () =>
+      [...el("copy-lista").querySelectorAll("input[type=checkbox]:checked")].map(cb => copiaItens[Number(cb.dataset.i)].item);
+
+    function atualizarContagemCopia() {
+      const n = copiaSelecionados().length;
+      const b = el("copy-ok");
+      b.textContent = n ? `Copiar ${n} ${n === 1 ? "item" : "itens"}` : "Marque algo";
+      b.disabled = n === 0;
+      b.classList.toggle("opacity-50", n === 0);
+    }
+
+    function abrirCopia() {
+      if (monthFilter === "all") return;
+      copiaDestino = monthFilter;
+      copiaItens = candidatosCopia(copiaDestino);
+      el("copy-titulo").textContent = `Copiar de ${monthLabelPt(shiftMonth(copiaDestino, -1))}`;
+      el("copy-sub").textContent = `para ${monthLabelPt(copiaDestino)}`;
+      const grupo = (titulo, tipo) => {
+        const linhas = copiaItens.map((c, i) => ({ c, i })).filter(x => x.c.item.tipo === tipo);
+        return linhas.length ? `<div class="mb-3"><div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">${titulo}</div>${linhas.map(x => linhaCopia(x.c, x.i)).join("")}</div>` : "";
+      };
+      el("copy-lista").innerHTML = copiaItens.length
+        ? grupo("🧾 Gastos fixos", "fixo") + grupo("💵 Ganhos", "ganho")
+        : `<p class="py-6 text-center text-xs font-semibold text-slate-400">Não há gastos fixos nem ganhos em ${esc(monthLabelPt(shiftMonth(copiaDestino, -1)))} para copiar.</p>`;
+      atualizarContagemCopia();
+      mostrarModal("copy-overlay");
+    }
+
+    el("btn-copiar").onclick = abrirCopia;
+    el("banner-fixos").addEventListener("click", (e) => { if (e.target.closest("[data-action='abrir-copia']")) abrirCopia(); });
+    el("copy-lista").addEventListener("change", atualizarContagemCopia);
+
+    el("copy-ok").onclick = async () => {
+      if (!currentUser || ocupado || !copiaDestino) return;
+      const itens = copiaSelecionados();
+      if (!itens.length) return;
+      // Mesmo dia do mês (se o mês novo for mais curto, usa o último dia: 31 → 30/28)
+      const linhas = itens.map(it => ({
+        descricao: it.desc, valor: it.valor, categoria: it.categoria, tipo: it.tipo,
+        conta: it.conta, pessoa: it.pessoa,
+        data: clampDayToMonth(copiaDestino, Number((it.data || "").slice(8, 10)) || 1),
+        pago: false, user_id: currentUser.id
+      }));
+      ocupado = true;
+      try {
+        const { error } = await clienteSupabase.from("lancamentos").insert(linhas);   // todas de uma vez
+        if (error) throw error;
+        esconderModal("copy-overlay");
+        await carregarDados();
+        showToast("success", "Copiado!", `${linhas.length} ${linhas.length === 1 ? "item" : "itens"} em ${monthLabelPt(copiaDestino)}.`);
+      } catch (err) {
+        showToast("danger", "Erro ao copiar", msgErro(err));
+      } finally {
+        ocupado = false;
+      }
+    };
+
+    // =========================================================================
+    // 3) COMPRAS PARCELADAS
+    // =========================================================================
+    // Função "pura": recebe os números e devolve a lista de parcelas. Não mexe na tela.
+    //   modo "parcela" → o valor digitado é o de CADA parcela
+    //   modo "total"   → o valor digitado é o total; dividimos em N
+    //                    (os centavos que sobram vão para a última parcela)
+    function gerarParcelas({ valor, modo, n, atual, dataISO }) {
+      const base = modo === "total" ? Math.floor(valor / n * 100) / 100 : valor;
+      const ultima = modo === "total" ? round2(valor - base * (n - 1)) : valor;
+      const dia = Number(dataISO.slice(8, 10));
+      const mesInicial = dataISO.slice(0, 7);
+      const lista = [];
+      for (let i = atual; i <= n; i++) {
+        const mes = shiftMonth(mesInicial, i - atual);          // cada parcela cai 1 mês depois
+        lista.push({ parcela: i, data: clampDayToMonth(mes, dia), valor: i === n ? ultima : base });
+      }
+      return lista;
+    }
+
+    function atualizarCaixaParcelas() {
+      el("parcelas-box").classList.toggle("hidden", !el("parcelado").checked);
+      atualizarHintParcelas();
+    }
+
+    function atualizarHintParcelas() {
+      const hint = el("parcelas-hint");
+      if (!el("parcelado").checked) { hint.textContent = ""; return; }
+      const n = parseInt(el("parcelas-n").value, 10);
+      const atual = parseInt(el("parcelas-atual").value, 10);
+      const valor = parseNumber(el("valor").value);
+      if (!(n >= 2 && n <= 60 && atual >= 1 && atual <= n)) {
+        hint.textContent = "Use de 2 a 60 parcelas e uma parcela atual entre 1 e o total.";
+        return;
+      }
+      if (!(valor > 0)) { hint.textContent = "Digite o valor acima para ver o resumo."; return; }
+      const lista = gerarParcelas({ valor, modo: el("parcelas-modo").value, n, atual, dataISO: el("data").value || hojeISO() });
+      const soma = round2(lista.reduce((t, p) => t + p.valor, 0));
+      const a = lista[0], z = lista[lista.length - 1];
+      hint.textContent = `Vai criar ${lista.length} ${lista.length === 1 ? "lançamento" : "lançamentos"}: ${a.parcela}/${n} em ${fmtData(a.data)}` +
+        (lista.length > 1 ? ` até ${z.parcela}/${n} em ${fmtData(z.data)}` : "") + `. Soma: ${formatBRL(soma)}.`;
+    }
+    ["parcelado", "parcelas-n", "parcelas-atual", "parcelas-modo", "valor", "data"].forEach(id => {
+      el(id).addEventListener("input", atualizarCaixaParcelas);
+      el(id).addEventListener("change", atualizarCaixaParcelas);
+    });
+
+    // Cartão "Parcelas já comprometidas": soma o que ainda vai cair nos meses seguintes
+    function renderParcelasFuturas() {
+      const card = el("card-parcelas");
+      const base = monthFilter === "all" ? currentMonthKey() : monthFilter;
+      const porMes = {};
+      let total = 0, qtd = 0;
+      dados.forEach(x => {
+        const k = monthKeyFromDate(x.data);
+        if (!x.grupo || !k || k <= base) return;      // só parcelas de meses DEPOIS do mês em foco
+        porMes[k] = porMes[k] || { valor: 0, qtd: 0 };
+        porMes[k].valor = round2(porMes[k].valor + parseNumber(x.valor));
+        porMes[k].qtd++;
+        total += parseNumber(x.valor);
+        qtd++;
+      });
+      const meses = Object.keys(porMes).sort();
+      if (!meses.length) return card.classList.add("hidden");
+
+      el("parcelas-resumo").textContent = `Depois de ${monthLabelPt(base)}: ${formatBRL(round2(total))} em ${qtd} ${qtd === 1 ? "parcela" : "parcelas"}.`;
+      const maior = Math.max(...meses.map(k => porMes[k].valor));
+      const mostrar = meses.slice(0, 6);
+      el("parcelas-meses").innerHTML = mostrar.map(k => `
+        <div>
+          <div class="flex items-baseline justify-between text-xs font-semibold">
+            <span class="text-slate-600">${mesCurto(k)} <span class="text-slate-400">· ${porMes[k].qtd} ${porMes[k].qtd === 1 ? "parcela" : "parcelas"}</span></span>
+            <b class="text-slate-800">${formatBRL(porMes[k].valor)}</b>
+          </div>
+          <div class="mt-1 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full bg-indigo-400" style="width:${(porMes[k].valor / maior) * 100}%"></div></div>
+        </div>`).join("") +
+        (meses.length > mostrar.length ? `<p class="text-[11px] font-semibold text-slate-400">+ ${meses.length - mostrar.length} ${meses.length - mostrar.length === 1 ? "mês" : "meses"} depois disso</p>` : "");
+      card.classList.remove("hidden");
+    }
+
+    // =========================================================================
+    // 4) LIMITES POR CATEGORIA
+    // =========================================================================
+    let limites = {};          // { "🍽️ Alimentação": 800, ... }
+    let limitesErro = null;    // texto do erro, se a tabela ainda não existe
+    let realtimeLimites = null;
+
+    async function carregarLimites() {
+      if (!currentUser) return;
+      try {
+        const { data, error } = await clienteSupabase.from("limites").select("*");
+        if (error) {
+          limitesErro = error.message || String(error);
+          limites = {};
+        } else {
+          limitesErro = null;
+          limites = {};
+          (data || []).forEach(l => { limites[l.categoria] = parseNumber(l.valor); });
+        }
+      } catch (err) {
+        limitesErro = err.message || String(err);
+      }
+      renderLimites();
+    }
+
+    function inscreverRealtimeLimites() {
+      if (realtimeLimites) clienteSupabase.removeChannel(realtimeLimites);
+      realtimeLimites = clienteSupabase
+        .channel("tabela-limites")
+        .on("postgres_changes", { event: "*", schema: "public", table: "limites" }, () => { carregarLimites(); })
+        .subscribe();
+    }
+
+    function limparLimites() {
+      limites = {}; limitesErro = null;
+      if (realtimeLimites) { clienteSupabase.removeChannel(realtimeLimites); realtimeLimites = null; }
+      renderLimites();
+    }
+
+    // Função "pura": quanto foi gasto em cada categoria no mês (só despesas, de todas as carteiras)
+    function gastoPorCategoria(mesKey) {
+      const r = {};
+      dados.forEach(x => {
+        if (x.tipo === "ganho" || monthKeyFromDate(x.data) !== mesKey) return;
+        r[x.categoria] = round2((r[x.categoria] || 0) + parseNumber(x.valor));
+      });
+      return r;
+    }
+
+    function htmlLimite(i) {
+      const passou = i.usado > i.lim;
+      const alerta = !passou && i.pct >= 80;
+      const barra = passou ? "bg-rose-500" : alerta ? "bg-amber-500" : "bg-emerald-500";
+      const cor = passou ? "text-rose-600" : alerta ? "text-amber-600" : "text-slate-500";
+      const pct = Math.min(100, i.pct);
+      return `
+        <div>
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="text-xs font-bold text-slate-800 truncate">${esc(i.cat)}</span>
+            <span class="shrink-0 text-[11px] font-semibold text-slate-500">${formatBRL(i.usado)} <span class="text-slate-400">de ${formatBRL(i.lim)}</span></span>
+          </div>
+          <div class="mt-1.5 h-2 w-full rounded-full bg-slate-100 overflow-hidden" role="progressbar" aria-label="Uso do limite de ${esc(i.cat)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.floor(pct)}">
+            <div class="h-full rounded-full ${barra}" style="width:${pct}%"></div>
+          </div>
+          <div class="mt-1 flex justify-between text-[11px] font-bold">
+            <span class="${cor}">${Math.floor(i.pct)}% usado</span>
+            <span class="${passou ? "text-rose-600" : "text-slate-500"}">${passou ? "Passou " + formatBRL(i.usado - i.lim) : "Faltam " + formatBRL(i.lim - i.usado)}</span>
+          </div>
+        </div>`;
+    }
+
+    function htmlAlerta(i) {
+      const passou = i.usado > i.lim;
+      const cls = passou ? "bg-rose-50 border-rose-200 text-rose-800" : "bg-amber-50 border-amber-200 text-amber-800";
+      const msg = passou
+        ? `🔴 <b>${esc(i.cat)}</b> passou do limite em ${formatBRL(i.usado - i.lim)} (${formatBRL(i.usado)} de ${formatBRL(i.lim)}).`
+        : `🟡 <b>${esc(i.cat)}</b> já usou ${Math.floor(i.pct)}% do limite. Faltam ${formatBRL(i.lim - i.usado)}.`;
+      return `<div class="rounded-2xl border px-4 py-3 text-xs font-semibold ${cls}" role="alert">${msg}</div>`;
+    }
+
+    function renderLimites() {
+      const lista = el("limites-lista");
+      const alerta = el("alerta-limites");
+      alerta.innerHTML = "";
+      alerta.classList.add("hidden");
+
+      if (limitesErro) {
+        const faltaTabela = /relation|does not exist|schema cache|PGRST205|42P01|Could not find the table/i.test(limitesErro);
+        lista.innerHTML = `<p class="rounded-xl bg-amber-50 border border-amber-200 p-3 text-[11px] font-semibold text-amber-800 leading-relaxed">${
+          faltaTabela ? "Falta rodar o <code>melhorias.sql</code> no Supabase (SQL Editor) para ativar os limites." : "Não consegui carregar os limites: " + esc(limitesErro)}</p>`;
+        return;
+      }
+      const cats = Object.keys(limites);
+      if (!cats.length) {
+        lista.innerHTML = `<p class="text-xs font-semibold text-slate-400">Nenhum limite ainda. Toque em <b>Definir</b> e o app avisa antes de estourar.</p>`;
+        return;
+      }
+      if (monthFilter === "all") {
+        lista.innerHTML = `<p class="text-xs font-semibold text-slate-400">Escolha um mês específico para ver o quanto de cada limite já foi usado.</p>`;
+        return;
+      }
+      const gasto = gastoPorCategoria(monthFilter);
+      const itens = cats
+        .map(cat => { const lim = limites[cat]; const usado = gasto[cat] || 0; return { cat, lim, usado, pct: (usado / lim) * 100 }; })
+        .sort((a, b) => b.pct - a.pct);
+      lista.innerHTML = itens.map(htmlLimite).join("");
+
+      const avisos = itens.filter(i => i.pct >= 80);
+      if (avisos.length) {
+        alerta.innerHTML = avisos.map(htmlAlerta).join("");
+        alerta.classList.remove("hidden");
+      }
+    }
+
+    el("btn-limites").onclick = () => {
+      // um campo por categoria de GASTO (a de "Trabalho" é de ganhos, então fica de fora)
+      el("limite-campos").innerHTML = [...el("categoria").options]
+        .filter(o => o.value !== "💼 Trabalho")
+        .map(o => `
+          <label class="flex items-center justify-between gap-3">
+            <span class="text-sm font-semibold text-slate-700 min-w-0 truncate">${esc(o.value)}</span>
+            <input type="number" min="0" step="0.01" inputmode="decimal" placeholder="sem limite" data-cat="${esc(o.value)}"
+                   value="${limites[o.value] != null ? limites[o.value] : ""}"
+                   class="w-36 shrink-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 text-right focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+          </label>`).join("");
+      mostrarModal("limite-overlay");
+    };
+
+    el("limite-form").onsubmit = async (e) => {
+      e.preventDefault();
+      if (!currentUser || ocupado) return;
+      const novos = [], remover = [];
+      el("limite-campos").querySelectorAll("input").forEach(inp => {
+        const cat = inp.dataset.cat;
+        const v = round2(parseNumber(inp.value));
+        if (v > 0) novos.push({ categoria: cat, valor: v, user_id: currentUser.id });
+        else if (limites[cat] != null) remover.push(cat);          // apagou o valor = tira o limite
+      });
+      ocupado = true;
+      try {
+        // upsert = "insere, ou troca se a categoria já existir"
+        if (novos.length) {
+          const r = await clienteSupabase.from("limites").upsert(novos, { onConflict: "categoria" });
+          if (r.error) throw r.error;
+        }
+        if (remover.length) {
+          const r = await clienteSupabase.from("limites").delete().in("categoria", remover);
+          if (r.error) throw r.error;
+        }
+        esconderModal("limite-overlay");
+        await carregarLimites();
+        showToast("success", "Limites salvos", `${novos.length} ${novos.length === 1 ? "categoria" : "categorias"} com limite.`);
+      } catch (err) {
+        showToast("danger", "Erro ao salvar limites", err.message || String(err));
+      } finally {
+        ocupado = false;
+      }
+    };
+
+    // Chamado no fim de render(). Cada parte roda isolada: se uma quebrar,
+    // a lista de lançamentos (o mais importante) continua funcionando.
+    function renderExtras() {
+      [renderBannerFixos, renderParcelasFuturas, renderLimites].forEach(fn => {
+        try { fn(); } catch (err) { console.error("Erro em " + fn.name, err); }
       });
     }
 
