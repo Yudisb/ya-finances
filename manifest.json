@@ -1,7 +1,7 @@
 {
   "name": "YA Finanças",
   "short_name": "YA Finanças",
-  "start_url": "/.index.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ecfdf5",
   "theme_color": "#047857",
