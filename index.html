@@ -54,6 +54,7 @@
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    html, body { overflow-anchor: none; }
   </style>
 </head>
 
@@ -122,13 +123,19 @@
     <!-- CONTENT WRAPPER -->
     <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
 
-      <!-- NAVEGAÇÃO ENTRE AS DUAS TELAS -->
+      <!-- NAVEGAÇÃO ENTRE AS TELAS -->
       <nav class="flex gap-1.5 rounded-2xl bg-white border border-slate-200/80 p-1.5 shadow-sm w-full sm:w-fit" aria-label="Telas do app">
         <button type="button" data-view="painel" class="nav-btn flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm">
           <i class="fa-solid fa-chart-pie"></i> Painel
         </button>
         <button type="button" data-view="cofre" class="nav-btn flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-50">
           <i class="fa-solid fa-piggy-bank"></i> Cofre
+        </button>
+        <button type="button" data-view="calendario" class="nav-btn flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-50">
+          <i class="fa-regular fa-calendar-days"></i> Calendário
+        </button>
+        <button type="button" data-view="recorrentes" class="nav-btn flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-50">
+          <i class="fa-solid fa-repeat"></i> Recorrentes
         </button>
       </nav>
 
@@ -273,7 +280,7 @@
               <table class="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
-                    <th class="py-3 px-4">Data</th>
+                    <th class="py-3 px-4">Data / Venc.</th>
                     <th class="py-3 px-4">Descrição e Titular</th>
                     <th class="py-3 px-4">Carteira</th>
                     <th class="py-3 px-4">Categoria</th>
@@ -331,8 +338,22 @@
                     <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="number" id="valor" placeholder="150.00" step="0.01" inputmode="decimal" required />
                   </div>
                   <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data</label>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data Base</label>
                     <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="date" id="data" required />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Vencimento (Opcional)</label>
+                    <input class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" type="date" id="vencimento" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status Inicial</label>
+                    <select class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" id="status-inicial">
+                      <option value="pago">Pago / Recebido</option>
+                      <option value="pendente" selected>Pendente</option>
+                    </select>
                   </div>
                 </div>
                 
@@ -350,6 +371,7 @@
                     <option value="🎁 Presentes">🎁 Presentes</option>
                     <option value="💍 Casamento">💍 Casamento</option>
                     <option value="💼 Trabalho">💼 Trabalho</option>
+                    <option value="🍦 Lazer">🍦 Lazer</option>
                     <option value="📌 Outros">📌 Outros</option>
                   </select>
                 </div>
@@ -402,6 +424,90 @@
               </div>
             </div>
 
+            <!-- COMPARAÇÃO DE GASTOS ENTRE MESES -->
+            <div id="card-comparacao-mensal" class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+              <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base mb-1">Comparação mensal</h3>
+                  <p id="comparacao-periodo" class="text-xs text-slate-500">Despesas deste mês x mês anterior</p>
+                </div>
+                <span class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1.5 text-[10px] font-bold">
+                  <i class="fa-solid fa-chart-column"></i> Evolução
+                </span>
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <div class="flex items-center justify-between gap-3 mb-1.5">
+                    <span id="comparacao-label-atual" class="text-xs font-bold text-slate-700">Mês atual</span>
+                    <strong id="comparacao-valor-atual" class="text-xs font-extrabold text-slate-900">R$ 0,00</strong>
+                  </div>
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <div id="comparacao-barra-atual" class="h-full rounded-full bg-emerald-500 transition-all" style="width:0%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between gap-3 mb-1.5">
+                    <span id="comparacao-label-anterior" class="text-xs font-bold text-slate-700">Mês anterior</span>
+                    <strong id="comparacao-valor-anterior" class="text-xs font-extrabold text-slate-900">R$ 0,00</strong>
+                  </div>
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <div id="comparacao-barra-anterior" class="h-full rounded-full bg-slate-400 transition-all" style="width:0%"></div>
+                  </div>
+                </div>
+              </div>
+              <div id="comparacao-resultado" class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-semibold text-slate-700" aria-live="polite">
+                A comparação aparecerá quando houver lançamentos.
+              </div>
+              <p class="text-[10px] text-slate-400 mt-3">Considera todas as despesas lançadas (pagas e pendentes), respeitando os filtros de carteira e titular.</p>
+            </div>
+
+            <!-- PREVISÃO DO RESULTADO NO FECHAMENTO DO MÊS -->
+            <div id="card-previsao-saldo" class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+              <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base mb-1">Previsão de saldo</h3>
+                  <p id="previsao-periodo" class="text-xs text-slate-500">Resultado previsto no fechamento do mês</p>
+                </div>
+                <span class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1.5 text-[10px] font-bold">
+                  <i class="fa-solid fa-calendar-check"></i> Projeção
+                </span>
+              </div>
+
+              <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Resultado previsto no fechamento</p>
+                <strong id="previsao-resultado" class="block text-2xl font-extrabold text-slate-900 mt-1">R$ 0,00</strong>
+                <p id="previsao-mensagem" class="text-xs font-semibold text-slate-600 mt-2" aria-live="polite">A previsão aparecerá quando houver lançamentos.</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 mt-4">
+                <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Receitas previstas</p>
+                  <strong id="previsao-receitas" class="block text-sm font-extrabold text-emerald-700 mt-1">R$ 0,00</strong>
+                </div>
+                <div class="rounded-xl border border-rose-100 bg-rose-50/60 p-3">
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-rose-700">Despesas previstas</p>
+                  <strong id="previsao-despesas" class="block text-sm font-extrabold text-rose-700 mt-1">R$ 0,00</strong>
+                </div>
+              </div>
+
+              <div class="mt-4 space-y-2.5">
+                <div class="flex items-center justify-between gap-3 text-xs">
+                  <span class="font-semibold text-slate-500">Ainda a receber</span>
+                  <strong id="previsao-a-receber" class="font-extrabold text-emerald-700">R$ 0,00</strong>
+                </div>
+                <div class="flex items-center justify-between gap-3 text-xs">
+                  <span class="font-semibold text-slate-500">Ainda a pagar</span>
+                  <strong id="previsao-a-pagar" class="font-extrabold text-rose-700">R$ 0,00</strong>
+                </div>
+                <div class="flex items-center justify-between gap-3 text-xs border-t border-slate-100 pt-2.5">
+                  <span class="font-semibold text-slate-500">Resultado já confirmado (pagos)</span>
+                  <strong id="previsao-confirmado" class="font-extrabold text-slate-800">R$ 0,00</strong>
+                </div>
+              </div>
+
+              <p class="text-[10px] text-slate-400 mt-4 leading-relaxed">Cálculo feito com os lançamentos cadastrados no mês, pagos e pendentes, respeitando os filtros de carteira e titular. É o resultado do mês, não o saldo bancário: não inclui saldo inicial das carteiras, cofres ou valores ainda não cadastrados.</p>
+            </div>
+
             <!-- LIMITES POR CATEGORIA -->
             <div id="card-limites" class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
               <div class="flex items-start justify-between gap-3">
@@ -427,6 +533,67 @@
 
         </div>
 
+
+        <!-- RELATÓRIO FINANCEIRO ANUAL -->
+        <section id="card-relatorio-anual" class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-sm space-y-5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base mb-1">Relatório financeiro anual</h3>
+              <p class="text-xs text-slate-500">Acompanhe receitas, despesas e resultado mês a mês.</p>
+            </div>
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-500">
+              Ano
+              <select id="relatorio-ano" class="bg-slate-50 border border-slate-200 text-slate-800 font-bold px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"></select>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Receitas no ano</p>
+              <strong id="anual-receitas" class="block text-lg font-extrabold text-emerald-700 mt-1">R$ 0,00</strong>
+            </div>
+            <div class="rounded-xl border border-rose-100 bg-rose-50/60 p-3.5">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-rose-700">Despesas no ano</p>
+              <strong id="anual-despesas" class="block text-lg font-extrabold text-rose-700 mt-1">R$ 0,00</strong>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Resultado do ano</p>
+              <strong id="anual-resultado" class="block text-lg font-extrabold text-slate-900 mt-1">R$ 0,00</strong>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h4 class="text-sm font-bold text-slate-800">Evolução mensal</h4>
+                <p class="text-[11px] text-slate-400">Valores de todos os lançamentos, pagos e pendentes.</p>
+              </div>
+            </div>
+            <div class="h-64 sm:h-72 relative">
+              <canvas id="chart-anual" aria-label="Gráfico anual de receitas e despesas por mês"></canvas>
+              <div id="emptyChartAnual" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold text-center">Nenhum lançamento encontrado neste ano e nestes filtros.</div>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-sm font-bold text-slate-800 mb-3">Resumo por mês</h4>
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+              <table class="w-full min-w-[560px] text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th class="px-3 py-3 font-bold">Mês</th>
+                    <th class="px-3 py-3 font-bold text-right">Receitas</th>
+                    <th class="px-3 py-3 font-bold text-right">Despesas</th>
+                    <th class="px-3 py-3 font-bold text-right">Resultado</th>
+                  </tr>
+                </thead>
+                <tbody id="anual-tabela" class="divide-y divide-slate-100"></tbody>
+                <tfoot id="anual-rodape" class="bg-slate-50 font-extrabold text-slate-800"></tfoot>
+              </table>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 leading-relaxed">O relatório considera os lançamentos cadastrados no ano selecionado e respeita os filtros de carteira e titular. Inclui itens pagos e pendentes; não representa saldo bancário nem inclui valores que ainda não foram registrados.</p>
+        </section>
       </div>
       <!-- fim da tela Painel -->
 
@@ -469,6 +636,74 @@
           Nenhum cofre ainda.<br>Crie o primeiro: "Viagem", "Reserva de emergência"...
         </div>
       </div>
+
+      <!-- ================= TELA 3: CALENDÁRIO ================= -->
+      <div id="view-calendario" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-sm">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="font-bold text-slate-900 text-base">Visão Mensal & Vencimentos</h2>
+              <p id="calendario-mes-label" class="text-xs text-slate-500">Mês atual</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" id="cal-prev" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all" aria-label="Mês anterior"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+              <button type="button" id="cal-today" class="px-3 h-9 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all whitespace-nowrap">Mês atual</button>
+              <button type="button" id="cal-next" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold flex items-center justify-center text-slate-600 transition-all" aria-label="Próximo mês"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+            </div>
+          </div>
+
+          <!-- Cabeçalho dos Dias da Semana -->
+          <div class="grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-t-xl overflow-hidden mt-4">
+            <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Dom</div>
+            <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Seg</div>
+            <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Ter</div>
+            <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Qua</div>
+            <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Qui</div>
+            <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Sex</div>
+            <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Sáb</div>
+          </div>
+          
+          <!-- Grid do Calendário Injetado via JS -->
+          <div id="calendario-grid" class="grid grid-cols-7 gap-px bg-slate-200 border-x border-b border-slate-200 rounded-b-xl overflow-hidden"></div>
+        </div>
+
+        <!-- Detalhes do dia selecionado -->
+        <div id="calendario-detalhes" class="bg-white rounded-2xl p-6 border border-emerald-200/80 shadow-sm hidden transition-all">
+           <div class="flex items-center justify-between mb-4">
+             <h3 id="detalhe-data" class="font-bold text-slate-900 text-base">Lançamentos do dia</h3>
+             <button type="button" onclick="document.getElementById('calendario-detalhes').classList.add('hidden')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+           </div>
+           <div id="detalhe-lista" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- ================= TELA 4: DESPESAS RECORRENTES ================= -->
+      <div id="view-recorrentes" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-extrabold text-slate-900 text-lg">Despesas recorrentes</h2>
+              <p class="text-xs text-slate-500 mt-1">Cadastre contas que se repetem e acompanhe suas próximas datas.</p>
+            </div>
+            <button type="button" id="btn-nova-recorrencia" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-2">
+              <i class="fa-solid fa-plus"></i> Nova recorrência
+            </button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+            <div class="rounded-xl bg-slate-50 border border-slate-100 p-4"><p class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Ativas</p><p id="rec-kpi-ativas" class="text-2xl font-extrabold text-slate-800 mt-1">0</p></div>
+            <div class="rounded-xl bg-slate-50 border border-slate-100 p-4"><p class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Pausadas</p><p id="rec-kpi-pausadas" class="text-2xl font-extrabold text-slate-800 mt-1">0</p></div>
+            <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-4"><p class="text-[10px] uppercase tracking-wider font-bold text-emerald-700">Total mensal estimado</p><p id="rec-kpi-total" class="text-2xl font-extrabold text-emerald-800 mt-1">R$ 0,00</p></div>
+          </div>
+        </div>
+        <div id="recorrencias-aviso" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800"></div>
+        <div id="recorrencias-lista" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+        <div id="recorrencias-vazio" class="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-repeat"></i></div>
+          <h3 class="font-bold text-slate-800 mt-3">Nenhuma recorrência cadastrada</h3>
+          <p class="text-xs text-slate-500 mt-1">Cadastre aluguel, internet, mensalidades e outras contas que se repetem.</p>
+        </div>
+        <p class="text-[11px] text-slate-400 font-medium">As recorrências ativas aparecem automaticamente como projeções no Painel e no Calendário do mês correspondente.</p>
+      </div>
     </main>
 
     <!-- FOOTER -->
@@ -508,9 +743,13 @@
           <input id="edit-valor" type="number" min="0.01" step="0.01" inputmode="decimal" required class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
         </div>
         <div>
-          <label for="edit-data" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data</label>
+          <label for="edit-data" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data Base</label>
           <input id="edit-data" type="date" required class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
         </div>
+      </div>
+      <div>
+        <label for="edit-vencimento" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de Vencimento</label>
+        <input id="edit-vencimento" type="date" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
       </div>
       <div>
         <label for="edit-categoria" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Categoria</label>
@@ -668,6 +907,36 @@
     </div>
   </div>
 
+  <!-- MODAL: NOVA / EDITAR RECORRÊNCIA -->
+  <div id="recorrencia-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <form id="recorrencia-form" class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 border border-slate-100 max-h-[92vh] overflow-y-auto space-y-4">
+      <input type="hidden" id="rec-id" />
+      <div class="flex items-start justify-between gap-3">
+        <div><h4 id="rec-modal-titulo" class="font-extrabold text-slate-900 text-lg">Nova despesa recorrente</h4><p class="text-xs text-slate-500">Configure a repetição da conta.</p></div>
+        <button type="button" data-fechar="recorrencia-overlay" aria-label="Fechar" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div><label for="rec-descricao" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição</label><input id="rec-descricao" required maxlength="100" placeholder="Ex.: Internet, aluguel, academia" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" /></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label for="rec-valor" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Valor (R$)</label><input id="rec-valor" type="number" min="0" step="0.01" required value="0" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold" /></div>
+        <div><label for="rec-categoria" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Categoria</label><input id="rec-categoria" required maxlength="60" placeholder="Ex.: Moradia" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold" /></div>
+      </div>
+      <label class="flex items-center gap-2 text-xs font-semibold text-slate-600"><input id="rec-variavel" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" /> Valor variável (ex.: água e energia)</label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label for="rec-frequencia" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Frequência</label><select id="rec-frequencia" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="anual">Anual</option></select></div>
+        <div><label for="rec-intervalo" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Repetir a cada</label><input id="rec-intervalo" type="number" min="1" max="24" value="1" required class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold" /></div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label for="rec-inicio" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de início</label><input id="rec-inicio" type="date" required class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold" /></div>
+        <div><label for="rec-fim" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de término (opcional)</label><input id="rec-fim" type="date" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold" /></div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label for="rec-conta" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Carteira (opcional)</label><select id="rec-conta" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"><option value="">Não definida</option><option value="salario">Salário</option><option value="va">Vale alimentação</option><option value="vc">Vale combustível</option></select></div>
+        <div><label for="rec-pessoa" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pessoa (opcional)</label><select id="rec-pessoa" class="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"><option value="">Não definida</option><option value="Yudi">Yudi</option><option value="Ana">Ana</option></select></div>
+      </div>
+      <div class="flex gap-2 pt-1"><button type="button" data-fechar="recorrencia-overlay" class="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">Cancelar</button><button type="submit" id="rec-salvar" class="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm">Salvar recorrência</button></div>
+    </form>
+  </div>
+
   <!-- TOAST NOTIFICATIONS -->
   <div id="toasts" class="fixed right-4 bottom-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
@@ -692,7 +961,12 @@
     let sortBy = "new";
     let monthFilter = "all";
     let chartInstance = null;
+    let annualChartInstance = null;
+    let annualYear = String(new Date().getFullYear());
     let realtimeChannel = null;
+    let recorrencias = [];
+    let realtimeRecorrencias = null;
+    let diaSelecionado = null;
 
     const PAST_MONTHS = 12;
     const FUTURE_MONTHS = 18;
@@ -717,7 +991,7 @@
       el.className = `pointer-events-auto p-4 rounded-2xl border shadow-lg text-xs font-semibold flex flex-col gap-0.5 ${bgColor}`;
       el.innerHTML = `<span class="font-bold text-sm">${esc(title)}</span><span>${esc(text)}</span>`;
       wrap.appendChild(el);
-      setTimeout(() => el.remove(), 2500);
+      setTimeout(() => el.remove(), 3000);
     };
 
     // --- DB DATA & REALTIME ---
@@ -729,14 +1003,16 @@
       } else {
         dados = (data || []).map(item => ({
           id: item.id,
-          desc: item.descricao,
+          desc: item.descricao || "",
           valor: item.valor,
           categoria: item.categoria,
           tipo: item.tipo,
           conta: item.conta || 'salario',
           pessoa: item.pessoa || 'Yudi',
           data: item.data,
+          vencimento: item.data_vencimento || item.data,
           pago: item.pago,
+          data_pagamento: item.data_pagamento || null,
           grupo: item.grupo_parcela || null,
           parcela: item.parcela_atual || null,
           parcelas: item.parcelas_total || null
@@ -758,22 +1034,71 @@
     }
 
     async function toggleStatus(id) {
-      const item = dados.find(d => d.id === id);
+      if (String(id).startsWith('rec_')) {
+        const partes = id.split('_');
+        const recId = partes[1];
+        const r = recorrencias.find(x => String(x.id) === String(recId));
+        if (!r) return;
+        
+        const [ano, mes] = (monthFilter === "all" ? currentMonthKey() : monthFilter).split("-").map(Number);
+        const diaIni = Number(String(r.data_inicio).split("-")[2]) || 1;
+        const maxDia = daysInMonth(ano, mes);
+        const dataRec = `${ano}-${pad2(mes)}-${pad2(Math.min(diaIni, maxDia))}`;
+        const dataHoje = yyyyMMdd(new Date());
+
+        const novoLancamento = {
+          descricao: (r.descricao || 'Recorrente').trim(),
+          valor: r.valor,
+          categoria: r.categoria || '📌 Outros',
+          tipo: 'fixo',
+          conta: r.conta || 'salario',
+          pessoa: r.pessoa || 'Yudi',
+          data: dataRec,
+          data_vencimento: dataRec,
+          pago: true,
+          data_pagamento: dataHoje,
+          user_id: currentUser.id
+        };
+
+        const { error } = await clienteSupabase.from("lancamentos").insert([novoLancamento]);
+        if (error) showToast("danger", "Erro ao efetivar recorrência", error.message);
+        else {
+          showToast("success", "Registrado como Pago!", `${r.descricao} foi adicionado aos lançamentos.`);
+          carregarDados();
+        }
+        return;
+      }
+
+      const item = dados.find(d => String(d.id) === String(id));
       if (!item) return;
-      const { error } = await clienteSupabase.from("lancamentos").update({ pago: !item.pago }).eq("id", id);
+
+      const novoPago = !item.pago;
+      const dataHoje = yyyyMMdd(new Date());
+      const novaDataPagamento = novoPago ? dataHoje : null;
+
+      const { error } = await clienteSupabase.from("lancamentos").update({ 
+        pago: novoPago, 
+        data_pagamento: novaDataPagamento 
+      }).eq("id", item.id);
+
       if (error) showToast("danger", "Erro ao atualizar", error.message);
       else carregarDados();
     }
 
     async function requestDelete(id) {
+      if (String(id).startsWith('rec_')) {
+        return showToast("info", "Item recorrente", "Para pausar ou excluir uma despesa recorrente, acesse a aba 'Recorrentes'.");
+      }
       const it = dados.find(d => String(d.id) === String(id));
-      if (it && it.grupo && it.parcelas) {
+      if (!it) return;
+
+      if (it.grupo && it.parcelas) {
         const temSeguintes = it.parcela < it.parcelas;
         return openModal({
           title: "Excluir parcela",
           text: `Esta compra é parcelada (${it.parcela}/${it.parcelas}). O que você quer excluir?`,
           okText: "Só esta parcela",
-          onOk: () => excluirLancamentos(clienteSupabase.from("lancamentos").delete().eq("id", id)),
+          onOk: () => excluirLancamentos(clienteSupabase.from("lancamentos").delete().eq("id", it.id)),
           okText2: temSeguintes ? "Esta e as seguintes" : null,
           onOk2: () => excluirLancamentos(clienteSupabase.from("lancamentos").delete().eq("grupo_parcela", it.grupo).gte("parcela_atual", it.parcela))
         });
@@ -781,7 +1106,7 @@
       openModal({
         title: "Excluir lançamento", text: "Deseja excluir este item permanentemente?", okText: "Excluir",
         onOk: async () => {
-          const { error } = await clienteSupabase.from("lancamentos").delete().eq("id", id);
+          const { error } = await clienteSupabase.from("lancamentos").delete().eq("id", it.id);
           if (error) showToast("danger", "Erro ao excluir", error.message);
           else carregarDados();
         }
@@ -804,6 +1129,8 @@
         inscreverRealtimeCofre();
         carregarLimites();
         inscreverRealtimeLimites();
+        carregarRecorrencias();
+        inscreverRealtimeRecorrencias();
       } else {
         authModal.classList.remove("hidden");
         appContainer.classList.add("hidden");
@@ -811,6 +1138,8 @@
         if (realtimeChannel) clienteSupabase.removeChannel(realtimeChannel);
         limparCofre();
         limparLimites();
+        recorrencias = [];
+        if (realtimeRecorrencias) { clienteSupabase.removeChannel(realtimeRecorrencias); realtimeRecorrencias = null; }
       }
     }
 
@@ -866,8 +1195,11 @@
         const categoria = document.getElementById("categoria").value;
         const tipo = document.getElementById("tipo").value;
         const data = document.getElementById("data").value || yyyyMMdd(new Date());
+        const vencimento = document.getElementById("vencimento").value || data;
+        const statusIni = document.getElementById("status-inicial").value === "pago";
         const conta = document.getElementById("conta").value;
         const pessoa = document.getElementById("pessoa").value;
+        const dataHoje = yyyyMMdd(new Date());
 
         if (!desc || valor <= 0) return;
         if (ocupado) return;
@@ -883,11 +1215,23 @@
           const grupo = novoGrupo();
           linhas = gerarParcelas({ valor, modo, n, atual, dataISO: data }).map(p => ({
             descricao: desc, valor: p.valor, categoria, tipo, conta, pessoa,
-            data: p.data, pago: false, user_id: currentUser.id,
+            data: p.data, data_vencimento: p.data, pago: false, data_pagamento: null, user_id: currentUser.id,
             parcela_atual: p.parcela, parcelas_total: n, grupo_parcela: grupo
           }));
         } else {
-          linhas = [{ descricao: desc, valor, categoria, tipo, conta, pessoa, data, pago: false, user_id: currentUser.id }];
+          linhas = [{ 
+            descricao: desc, 
+            valor, 
+            categoria, 
+            tipo, 
+            conta, 
+            pessoa, 
+            data, 
+            data_vencimento: vencimento, 
+            pago: statusIni, 
+            data_pagamento: statusIni ? dataHoje : null, 
+            user_id: currentUser.id 
+          }];
         }
 
         ocupado = true;
@@ -1088,6 +1432,11 @@
     
     document.getElementById("global-conta").onchange = (e) => { contaFilter = e.target.value; render(); };
     document.getElementById("global-pessoa").onchange = (e) => { pessoaFilter = e.target.value; render(); };
+
+    document.getElementById("relatorio-ano").onchange = (e) => {
+      annualYear = e.target.value;
+      renderRelatorioAnual();
+    };
     
     document.getElementById("f-sort").onchange = (e) => { sortBy = e.target.value; render(); };
 
@@ -1146,13 +1495,86 @@
     btnNext.addEventListener("click", () => { if(monthFilter !== "all") setMonth(shiftMonth(monthFilter, 1)); });
     btnAll.addEventListener("click", () => setMonth(monthFilter === "all" ? currentMonthKey() : "all"));
 
+    document.getElementById("cal-prev").onclick = () => {
+      const atual = monthFilter === "all" ? currentMonthKey() : monthFilter;
+      setMonth(shiftMonth(atual, -1));
+    };
+    document.getElementById("cal-next").onclick = () => {
+      const atual = monthFilter === "all" ? currentMonthKey() : monthFilter;
+      setMonth(shiftMonth(atual, 1));
+    };
+    document.getElementById("cal-today").onclick = () => {
+      setMonth(currentMonthKey());
+    };
+
     function updateFormDateForMonth(){
       const today = new Date();
       document.getElementById("data").value = monthFilter === "all" ? yyyyMMdd(today) : clampDayToMonth(monthFilter, today.getDate());
+      document.getElementById("vencimento").value = document.getElementById("data").value;
+    }
+
+    // --- INTEGRAÇÃO AUTOMÁTICA DE RECORRÊNCIAS NO PAINEL E CALENDÁRIO ---
+    function obterLancamentosVirtuaisRecorrentes() {
+      if (monthFilter === "all") return [];
+      const [ano, mes] = monthFilter.split("-").map(Number);
+      const virtuais = [];
+      
+      recorrencias.forEach(r => {
+        if (!r || !r.ativo || !r.data_inicio) return;
+        const inicio = String(r.data_inicio);
+        const fim = r.data_fim ? String(r.data_fim) : null;
+        const partesIni = inicio.split("-").map(Number);
+        if (partesIni.length < 3 || !partesIni[0] || !partesIni[1] || !partesIni[2]) return;
+        const [anoIni, mesIni, diaIni] = partesIni;
+        
+        const mesInicioKey = `${anoIni}-${pad2(mesIni)}`;
+        const mesFimKey = fim ? fim.slice(0, 7) : "9999-12";
+        
+        if (monthFilter >= mesInicioKey && monthFilter <= mesFimKey) {
+          const intervalo = Math.max(1, Number(r.intervalo) || 1);
+          const diffMeses = (ano - anoIni) * 12 + (mes - mesIni);
+          if (r.frequencia === "anual") {
+            if (mes !== mesIni || (ano - anoIni) % intervalo !== 0) return;
+          } else if (r.frequencia !== "semanal") {
+            if (diffMeses % intervalo !== 0) return;
+          }
+
+          let dia = diaIni;
+          const maxDia = daysInMonth(ano, mes);
+          if (dia > maxDia) dia = maxDia;
+          const dataRec = `${ano}-${pad2(mes)}-${pad2(dia)}`;
+          if (fim && dataRec > fim) return;
+          
+          const descRec = String(r.descricao || "").trim();
+          const jaExiste = dados.some(d => 
+            monthKeyFromDate(d.data) === monthFilter && 
+            String(d.desc || "").trim().toLowerCase() === descRec.toLowerCase()
+          );
+          
+          if (!jaExiste) {
+            virtuais.push({
+              id: 'rec_' + r.id + '_' + monthFilter,
+              desc: (descRec || 'Recorrente') + ' (Recorrente)',
+              valor: r.valor,
+              categoria: r.categoria || '📌 Outros',
+              tipo: 'fixo',
+              conta: r.conta || 'salario',
+              pessoa: r.pessoa || 'Yudi',
+              data: dataRec,
+              vencimento: dataRec,
+              pago: false,
+              data_pagamento: null,
+              virtual: true,
+              recorrencia_id: r.id
+            });
+          }
+        }
+      });
+      return virtuais;
     }
 
     function applyFilters(){
-      let list = [...dados];
+      let list = [...dados, ...obterLancamentosVirtuaisRecorrentes()];
       if(monthFilter !== "all") list = list.filter(x => monthKeyFromDate(x.data) === monthFilter);
       if(abaAtiva !== "todos") list = list.filter(x => x.tipo === abaAtiva);
       if(statusFilter === "pago") list = list.filter(x => x.pago);
@@ -1172,6 +1594,191 @@
       if(sortBy === "valueDesc") list.sort((a,b) => parseNumber(b.valor) - parseNumber(a.valor));
       if(sortBy === "valueAsc") list.sort((a,b) => parseNumber(a.valor) - parseNumber(b.valor));
       return list;
+    }
+
+    // --- COMPARAÇÃO MENSAL DE DESPESAS ---
+    function renderComparacaoMensal() {
+      const mesAtual = monthFilter === "all" ? currentMonthKey() : monthFilter;
+      const mesAnterior = shiftMonth(mesAtual, -1);
+
+      const todasDespesas = [...dados, ...obterLancamentosVirtuaisRecorrentes()];
+      const despesasDoMes = (mes) => todasDespesas
+        .filter(item => monthKeyFromDate(item.data) === mes && item.tipo !== "ganho")
+        .filter(item => contaFilter === "all" || item.conta === contaFilter)
+        .filter(item => pessoaFilter === "all" || item.pessoa === pessoaFilter)
+        .reduce((total, item) => total + parseNumber(item.valor), 0);
+
+      const totalAtual = despesasDoMes(mesAtual);
+      const totalAnterior = despesasDoMes(mesAnterior);
+      const maiorTotal = Math.max(totalAtual, totalAnterior, 1);
+      const variacao = totalAtual - totalAnterior;
+      const percentual = totalAnterior > 0 ? (variacao / totalAnterior) * 100 : null;
+
+      const labelAtual = monthLabelPt(mesAtual);
+      const labelAnterior = monthLabelPt(mesAnterior);
+      const el = (id) => document.getElementById(id);
+
+      el("comparacao-periodo").textContent = `${labelAtual} x ${labelAnterior}`;
+      el("comparacao-label-atual").textContent = labelAtual;
+      el("comparacao-label-anterior").textContent = labelAnterior;
+      el("comparacao-valor-atual").textContent = formatBRL(totalAtual);
+      el("comparacao-valor-anterior").textContent = formatBRL(totalAnterior);
+      el("comparacao-barra-atual").style.width = `${(totalAtual / maiorTotal) * 100}%`;
+      el("comparacao-barra-anterior").style.width = `${(totalAnterior / maiorTotal) * 100}%`;
+
+      const resultado = el("comparacao-resultado");
+      if (totalAtual === 0 && totalAnterior === 0) {
+        resultado.className = "mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-semibold text-slate-600";
+        resultado.textContent = "Não há despesas registradas nesses dois meses para comparar.";
+      } else if (totalAnterior === 0) {
+        resultado.className = "mt-4 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-3 text-xs font-semibold text-blue-800";
+        resultado.textContent = totalAtual > 0
+          ? `Foram registradas ${formatBRL(totalAtual)} em despesas neste mês. Não havia despesas no mês anterior para calcular uma variação percentual.`
+          : "Não houve despesas registradas neste mês.";
+      } else if (variacao > 0) {
+        resultado.className = "mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-xs font-semibold text-rose-800";
+        resultado.textContent = `As despesas aumentaram ${formatBRL(variacao)} (${percentual.toFixed(1).replace(".", ",")}%) em relação ao mês anterior.`;
+      } else if (variacao < 0) {
+        resultado.className = "mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-xs font-semibold text-emerald-800";
+        resultado.textContent = `As despesas diminuíram ${formatBRL(Math.abs(variacao))} (${Math.abs(percentual).toFixed(1).replace(".", ",")}%) em relação ao mês anterior.`;
+      } else {
+        resultado.className = "mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-semibold text-slate-700";
+        resultado.textContent = "As despesas ficaram exatamente no mesmo valor do mês anterior.";
+      }
+    }
+
+    // --- PREVISÃO DO RESULTADO NO FECHAMENTO DO MÊS ---
+    function renderPrevisaoSaldo() {
+      const mes = monthFilter === "all" ? currentMonthKey() : monthFilter;
+      const labelMes = monthLabelPt(mes);
+
+      const todasMes = [...dados, ...obterLancamentosVirtuaisRecorrentes()];
+      const lancamentosMes = todasMes
+        .filter(item => monthKeyFromDate(item.data) === mes)
+        .filter(item => contaFilter === "all" || item.conta === contaFilter)
+        .filter(item => pessoaFilter === "all" || item.pessoa === pessoaFilter);
+
+      const somar = (lista) => round2(lista.reduce((total, item) => total + parseNumber(item.valor), 0));
+      const receitas = somar(lancamentosMes.filter(item => item.tipo === "ganho"));
+      const despesas = somar(lancamentosMes.filter(item => item.tipo !== "ganho"));
+      const aReceber = somar(lancamentosMes.filter(item => item.tipo === "ganho" && !item.pago));
+      const aPagar = somar(lancamentosMes.filter(item => item.tipo !== "ganho" && !item.pago));
+      const receitasConfirmadas = somar(lancamentosMes.filter(item => item.tipo === "ganho" && !!item.pago));
+      const despesasConfirmadas = somar(lancamentosMes.filter(item => item.tipo !== "ganho" && !!item.pago));
+      const resultadoConfirmado = round2(receitasConfirmadas - despesasConfirmadas);
+      const resultadoPrevisto = round2(receitas - despesas);
+
+      const el = (id) => document.getElementById(id);
+      el("previsao-periodo").textContent = `Resultado estimado para ${labelMes}`;
+      el("previsao-resultado").textContent = formatBRL(resultadoPrevisto);
+      el("previsao-receitas").textContent = formatBRL(receitas);
+      el("previsao-despesas").textContent = formatBRL(despesas);
+      el("previsao-a-receber").textContent = formatBRL(aReceber);
+      el("previsao-a-pagar").textContent = formatBRL(aPagar);
+      el("previsao-confirmado").textContent = formatBRL(resultadoConfirmado);
+
+      const resultadoEl = el("previsao-resultado");
+      resultadoEl.className = `block text-2xl font-extrabold mt-1 ${resultadoPrevisto >= 0 ? "text-emerald-700" : "text-rose-700"}`;
+
+      const mensagem = el("previsao-mensagem");
+      if (lancamentosMes.length === 0) {
+        mensagem.className = "text-xs font-semibold text-slate-600 mt-2";
+        mensagem.textContent = "Ainda não há lançamentos cadastrados para este mês e estes filtros.";
+      } else if (resultadoPrevisto > 0) {
+        mensagem.className = "text-xs font-semibold text-emerald-700 mt-2";
+        mensagem.textContent = "Pelos lançamentos cadastrados, a previsão é fechar o mês com resultado positivo.";
+      } else if (resultadoPrevisto < 0) {
+        mensagem.className = "text-xs font-semibold text-rose-700 mt-2";
+        mensagem.textContent = "A previsão indica que as despesas cadastradas superarão as receitas neste mês.";
+      } else {
+        mensagem.className = "text-xs font-semibold text-slate-600 mt-2";
+        mensagem.textContent = "As receitas e despesas cadastradas estão equilibradas neste mês.";
+      }
+    }
+
+    // --- RELATÓRIO FINANCEIRO ANUAL ---
+    function renderRelatorioAnual() {
+      const anoSelect = document.getElementById("relatorio-ano");
+      const anos = new Set([String(new Date().getFullYear()), String(annualYear)]);
+      dados.forEach(item => {
+        const chave = monthKeyFromDate(item.data);
+        if (chave) anos.add(chave.slice(0, 4));
+      });
+      const anosOrdenados = Array.from(anos).filter(a => /^\d{4}$/.test(a)).sort((a, b) => Number(b) - Number(a));
+      if (anoSelect.options.length !== anosOrdenados.length || Array.from(anoSelect.options).some((o, i) => o.value !== anosOrdenados[i])) {
+        anoSelect.innerHTML = anosOrdenados.map(a => `<option value="${a}">${a}</option>`).join("");
+      }
+      if (!anos.has(annualYear)) annualYear = String(new Date().getFullYear());
+      anoSelect.value = annualYear;
+
+      const lancamentosAno = dados
+        .filter(item => {
+          const chave = monthKeyFromDate(item.data);
+          return chave && chave.slice(0, 4) === annualYear;
+        })
+        .filter(item => contaFilter === "all" || item.conta === contaFilter)
+        .filter(item => pessoaFilter === "all" || item.pessoa === pessoaFilter);
+
+      const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      const meses = nomesMeses.map((nome, indice) => {
+        const chave = `${annualYear}-${pad2(indice + 1)}`;
+        const itens = lancamentosAno.filter(item => monthKeyFromDate(item.data) === chave);
+        const receitas = round2(itens.filter(item => item.tipo === "ganho").reduce((soma, item) => soma + parseNumber(item.valor), 0));
+        const despesas = round2(itens.filter(item => item.tipo !== "ganho").reduce((soma, item) => soma + parseNumber(item.valor), 0));
+        return { nome, receitas, despesas, resultado: round2(receitas - despesas), quantidade: itens.length };
+      });
+
+      const totalReceitas = round2(meses.reduce((soma, mes) => soma + mes.receitas, 0));
+      const totalDespesas = round2(meses.reduce((soma, mes) => soma + mes.despesas, 0));
+      const totalResultado = round2(totalReceitas - totalDespesas);
+      document.getElementById("anual-receitas").textContent = formatBRL(totalReceitas);
+      document.getElementById("anual-despesas").textContent = formatBRL(totalDespesas);
+      const resultadoEl = document.getElementById("anual-resultado");
+      resultadoEl.textContent = formatBRL(totalResultado);
+      resultadoEl.className = `block text-lg font-extrabold mt-1 ${totalResultado >= 0 ? "text-emerald-700" : "text-rose-700"}`;
+
+      document.getElementById("anual-tabela").innerHTML = meses.map(mes => `
+        <tr class="hover:bg-slate-50/70">
+          <td class="px-3 py-3 font-semibold text-slate-700">${mes.nome}</td>
+          <td class="px-3 py-3 text-right font-semibold text-emerald-700">${formatBRL(mes.receitas)}</td>
+          <td class="px-3 py-3 text-right font-semibold text-rose-700">${formatBRL(mes.despesas)}</td>
+          <td class="px-3 py-3 text-right font-extrabold ${mes.resultado >= 0 ? "text-emerald-700" : "text-rose-700"}">${formatBRL(mes.resultado)}</td>
+        </tr>`).join("");
+      document.getElementById("anual-rodape").innerHTML = `
+        <tr>
+          <td class="px-3 py-3">TOTAL ${annualYear}</td>
+          <td class="px-3 py-3 text-right text-emerald-700">${formatBRL(totalReceitas)}</td>
+          <td class="px-3 py-3 text-right text-rose-700">${formatBRL(totalDespesas)}</td>
+          <td class="px-3 py-3 text-right ${totalResultado >= 0 ? "text-emerald-700" : "text-rose-700"}">${formatBRL(totalResultado)}</td>
+        </tr>`;
+
+      const temLancamentos = lancamentosAno.length > 0;
+      document.getElementById("emptyChartAnual").classList.toggle("hidden", temLancamentos);
+      const canvas = document.getElementById("chart-anual");
+      if (annualChartInstance) {
+        annualChartInstance.destroy();
+        annualChartInstance = null;
+      }
+      annualChartInstance = new Chart(canvas.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels: nomesMeses.map(nome => nome.slice(0, 3)),
+          datasets: [
+            { label: "Receitas", data: meses.map(m => m.receitas), backgroundColor: "#10b981", borderRadius: 5 },
+            { label: "Despesas", data: meses.map(m => m.despesas), backgroundColor: "#f87171", borderRadius: 5 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } },
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: value => formatBRL(value) } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
     }
 
     // --- CHART & RENDER ---
@@ -1249,8 +1856,17 @@
       list.forEach(item => {
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-50/80 transition-colors";
-        const dataFmt = item.data ? item.data.split("-").reverse().join("/") : "—";
+        
+        let dataExibicao = "";
+        if (item.pago && item.data_pagamento) {
+          dataExibicao = `<span class="text-emerald-700 font-bold">Pago em:</span> ${item.data_pagamento.split("-").reverse().join("/")}`;
+        } else {
+          const dtVenc = item.vencimento || item.data;
+          dataExibicao = `<span class="text-slate-400">Venc:</span> ${dtVenc ? dtVenc.split("-").reverse().join("/") : "—"}`;
+        }
+
         const isGanho = item.tipo === "ganho";
+        const safeId = esc(String(item.id));
         
         let contaBadge = '';
         let contaStyle = '';
@@ -1261,7 +1877,7 @@
         const pessoaIcon = item.pessoa === 'Ana' ? '👩 Ana' : '👦 Yudi';
 
         tr.innerHTML = `
-          <td class="py-3 px-4 text-slate-400 font-medium">${dataFmt}</td>
+          <td class="py-3 px-4 font-medium">${dataExibicao}</td>
           <td class="py-3 px-4">
             <div class="font-bold text-slate-900">${esc(item.desc)}${badgeParcela(item)}</div>
             <div class="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-bold text-slate-500 border border-slate-200">
@@ -1272,13 +1888,13 @@
           <td class="py-3 px-4"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200/60">${esc(item.categoria)}</span></td>
           <td class="py-3 px-4 font-extrabold ${isGanho ? 'text-emerald-600' : 'text-slate-800'}">${formatBRL(item.valor)}</td>
           <td class="py-3 px-4">
-            <button onclick="toggleStatus(${item.id})" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase transition-all ${item.pago ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+            <button onclick="toggleStatus('${safeId}')" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase transition-all ${item.pago ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
               ${item.pago ? 'Pago' : 'Pendente'}
             </button>
           </td>
           <td class="py-3 px-4 text-center whitespace-nowrap">
-            <button onclick="abrirEditar(${item.id})" aria-label="Editar lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-400 transition-all inline-flex items-center justify-center mr-1.5"><i class="fa-solid fa-pen text-xs"></i></button>
-            <button onclick="requestDelete(${item.id})" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 transition-all inline-flex items-center justify-center">
+            <button onclick="abrirEditar('${safeId}')" aria-label="Editar lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-400 transition-all inline-flex items-center justify-center mr-1.5"><i class="fa-solid fa-pen text-xs"></i></button>
+            <button onclick="requestDelete('${safeId}')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 transition-all inline-flex items-center justify-center">
               <i class="fa-regular fa-trash-can text-xs"></i>
             </button>
           </td>
@@ -1292,7 +1908,7 @@
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <div class="font-bold text-slate-900 text-sm break-words">${esc(item.desc)}${badgeParcela(item)}</div>
-              <div class="mt-0.5 text-[11px] font-semibold text-slate-400">${dataFmt} · ${pessoaIcon}</div>
+              <div class="mt-0.5 text-[11px] font-semibold text-slate-400">${dataExibicao} · ${pessoaIcon}</div>
             </div>
             <div class="shrink-0 text-right text-sm font-extrabold ${isGanho ? 'text-emerald-600' : 'text-slate-800'}">${formatBRL(item.valor)}</div>
           </div>
@@ -1302,9 +1918,9 @@
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200/60">${esc(item.categoria)}</span>
             </div>
             <div class="flex shrink-0 items-center gap-1.5">
-              <button onclick="toggleStatus(${item.id})" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase transition-all ${statusCls}">${item.pago ? 'Pago' : 'Pendente'}</button>
-              <button onclick="abrirEditar(${item.id})" aria-label="Editar lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-400 transition-all inline-flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
-              <button onclick="requestDelete(${item.id})" aria-label="Excluir lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 transition-all inline-flex items-center justify-center">
+              <button onclick="toggleStatus('${safeId}')" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase transition-all ${statusCls}">${item.pago ? 'Pago' : 'Pendente'}</button>
+              <button onclick="abrirEditar('${safeId}')" aria-label="Editar lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-400 transition-all inline-flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
+              <button onclick="requestDelete('${safeId}')" aria-label="Excluir lançamento" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 transition-all inline-flex items-center justify-center">
                 <i class="fa-regular fa-trash-can text-xs"></i>
               </button>
             </div>
@@ -1313,6 +1929,9 @@
       });
 
       renderChart(list);
+      renderComparacaoMensal();
+      renderPrevisaoSaldo();
+      renderRelatorioAnual();
       renderExtras();
     }
 
@@ -1524,6 +2143,9 @@
     function mostrarView(nome) {
       document.getElementById("view-painel").classList.toggle("hidden", nome !== "painel");
       document.getElementById("view-cofre").classList.toggle("hidden", nome !== "cofre");
+      document.getElementById("view-calendario").classList.toggle("hidden", nome !== "calendario");
+      document.getElementById("view-recorrentes").classList.toggle("hidden", nome !== "recorrentes");
+      
       document.querySelectorAll(".nav-btn").forEach(b => {
         const ativo = b.dataset.view === nome;
         b.classList.toggle("bg-emerald-600", ativo);
@@ -1533,17 +2155,19 @@
         b.classList.toggle("hover:bg-slate-50", !ativo);
       });
       if (nome === "painel") render();
+      if (nome === "calendario") renderCalendario();
+      if (nome === "recorrentes") carregarRecorrencias();
     }
     document.querySelectorAll(".nav-btn").forEach(b => b.addEventListener("click", () => mostrarView(b.dataset.view)));
 
     const mostrarModal = (id) => { const el = document.getElementById(id); el.classList.remove("hidden"); el.classList.add("flex"); };
     const esconderModal = (id) => { const el = document.getElementById(id); el.classList.add("hidden"); el.classList.remove("flex"); };
     document.querySelectorAll("[data-fechar]").forEach(b => b.addEventListener("click", () => esconderModal(b.dataset.fechar)));
-    ["cofre-overlay", "mov-overlay", "edit-overlay", "copy-overlay", "limite-overlay"].forEach(id => {
+    ["cofre-overlay", "mov-overlay", "edit-overlay", "copy-overlay", "limite-overlay", "recorrencia-overlay"].forEach(id => {
       document.getElementById(id).addEventListener("click", (e) => { if (e.target.id === id) esconderModal(id); });
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") { ["cofre-overlay", "mov-overlay", "edit-overlay", "copy-overlay", "limite-overlay"].forEach(esconderModal); }
+      if (e.key === "Escape") { ["cofre-overlay", "mov-overlay", "edit-overlay", "copy-overlay", "limite-overlay", "recorrencia-overlay"].forEach(esconderModal); }
     });
 
     function abrirCofreModal(c) {
@@ -1575,10 +2199,10 @@
       if (!btn) return;
       const id = btn.dataset.id;
       switch (btn.dataset.action) {
-        case "depositar":   abrirMovModal(id, "deposito"); break;
+        case "depositar":  abrirMovModal(id, "deposito"); break;
         case "retirar":     abrirMovModal(id, "retirada"); break;
-        case "editar":      abrirCofreModal(cofrePorId(id)); break;
-        case "excluir":     pedirExcluirCofre(id); break;
+        case "editar":     abrirCofreModal(cofrePorId(id)); break;
+        case "excluir":    pedirExcluirCofre(id); break;
         case "excluir-mov": pedirExcluirMov(id); break;
         case "historico":
           if (historicoAberto.has(id)) historicoAberto.delete(id); else historicoAberto.add(id);
@@ -1700,8 +2324,8 @@
 
     function msgErro(error) {
       const m = (error && error.message) || String(error);
-      return /parcela_atual|parcelas_total|grupo_parcela/i.test(m)
-        ? "Falta rodar o melhorias.sql no Supabase (SQL Editor). Detalhe: " + m
+      return /parcela_atual|parcelas_total|grupo_parcela|data_vencimento|data_pagamento/i.test(m)
+        ? "Falta rodar os comandos SQL necessários no Supabase (SQL Editor). Detalhe: " + m
         : m;
     }
 
@@ -1720,6 +2344,9 @@
 
     // --- EDITAR LANÇAMENTO ---
     function abrirEditar(id) {
+      if (String(id).startsWith('rec_')) {
+        return showToast("info", "Item recorrente", "Para alterar uma despesa recorrente, acesse a aba 'Recorrentes'.");
+      }
       const it = acharItem(id);
       if (!it) return;
       garantirOpcao(el("edit-categoria"), it.categoria);
@@ -1729,6 +2356,7 @@
       el("edit-desc").value = it.desc || "";
       el("edit-valor").value = parseNumber(it.valor);
       el("edit-data").value = it.data || hojeISO();
+      el("edit-vencimento").value = it.vencimento || it.data || hojeISO();
       el("edit-categoria").value = it.categoria;
       el("edit-tipo").value = it.tipo;
       el("edit-sub").textContent = it.parcelas ? `Parcela ${it.parcela} de ${it.parcelas}` : "Corrija o que estiver errado";
@@ -1750,7 +2378,8 @@
         categoria: el("edit-categoria").value,
         tipo: el("edit-tipo").value,
         conta: el("edit-conta").value,
-        pessoa: el("edit-pessoa").value
+        pessoa: el("edit-pessoa").value,
+        data_vencimento: el("edit-vencimento").value || el("edit-data").value
       };
       const data = el("edit-data").value;
       if (!campos.descricao || campos.valor <= 0 || !data) {
@@ -1776,11 +2405,33 @@
       }
     };
 
+    // --- FUNÇÕES DE ATUALIZAÇÃO RÁPIDA DE DATAS NO CALENDÁRIO ---
+    async function atualizarDataVencimentoCalendario(id, novaData) {
+      if (!novaData) return;
+      const { error } = await clienteSupabase.from("lancamentos").update({ data_vencimento: novaData }).eq("id", id);
+      if (error) showToast("danger", "Erro ao atualizar vencimento", error.message);
+      else {
+        showToast("success", "Vencimento atualizado!", "");
+        carregarDados();
+      }
+    }
+
+    async function atualizarDataPagamentoCalendario(id, novaData) {
+      if (!novaData) return;
+      const { error } = await clienteSupabase.from("lancamentos").update({ data_pagamento: novaData, pago: true }).eq("id", id);
+      if (error) showToast("danger", "Erro ao atualizar data de pagamento", error.message);
+      else {
+        showToast("success", "Data de pagamento atualizada!", "");
+        carregarDados();
+      }
+    }
+
     // --- COPIAR FIXOS ---
     function candidatosCopia(destino) {
       const origem = shiftMonth(destino, -1);
       const norm = (t) => String(t || "").trim().toLowerCase();
-      return dados
+      const todasOrigem = [...dados, ...obterLancamentosVirtuaisRecorrentes()];
+      return todasOrigem
         .filter(x => monthKeyFromDate(x.data) === origem && !x.grupo && (x.tipo === "fixo" || x.tipo === "ganho"))
         .map(x => ({
           item: x,
@@ -1866,11 +2517,11 @@
       if (!currentUser || ocupado || !copiaDestino) return;
       const itens = copiaSelecionados();
       if (!itens.length) return;
+      const dtData = clampDayToMonth(copiaDestino, Number((itens[0].data || "").slice(8, 10)) || 1);
       const linhas = itens.map(it => ({
-        descricao: it.desc, valor: it.valor, categoria: it.categoria, tipo: it.tipo,
+        descricao: it.desc.replace(' (Recorrente)', ''), valor: it.valor, categoria: it.categoria, tipo: it.tipo,
         conta: it.conta, pessoa: it.pessoa,
-        data: clampDayToMonth(copiaDestino, Number((it.data || "").slice(8, 10)) || 1),
-        pago: false, user_id: currentUser.id
+        data: dtData, data_vencimento: dtData, pago: false, data_pagamento: null, user_id: currentUser.id
       }));
       ocupado = true;
       try {
@@ -1998,7 +2649,8 @@
 
     function gastoPorCategoria(mesKey) {
       const r = {};
-      dados.forEach(x => {
+      const todas = [...dados, ...obterLancamentosVirtuaisRecorrentes()];
+      todas.forEach(x => {
         if (x.tipo === "ganho" || monthKeyFromDate(x.data) !== mesKey) return;
         r[x.categoria] = round2((r[x.categoria] || 0) + parseNumber(x.valor));
       });
@@ -2113,8 +2765,332 @@
       }
     };
 
+    // --- CALENDÁRIO FINANCEIRO APRIMORADO E CORRIGIDO ---
+    function renderCalendario() {
+      const mesBase = monthFilter === "all" ? currentMonthKey() : monthFilter;
+      const [ano, mesNum] = mesBase.split("-").map(Number);
+      
+      el("calendario-mes-label").textContent = monthLabelPt(mesBase);
+      if (diaSelecionado && !diaSelecionado.startsWith(mesBase)) {
+        diaSelecionado = null;
+      }
+      el("calendario-detalhes").classList.toggle("hidden", !diaSelecionado);
+
+      const primeiroDia = new Date(ano, mesNum - 1, 1).getDay();
+      const diasNoMes = new Date(ano, mesNum, 0).getDate();
+
+      const grid = el("calendario-grid");
+      grid.innerHTML = "";
+      grid.className = "grid grid-cols-7 gap-px bg-slate-200 border-x border-b border-slate-200 rounded-b-xl overflow-hidden";
+
+      for (let i = 0; i < primeiroDia; i++) {
+        grid.innerHTML += `<div class="bg-slate-50/50 min-h-[70px] sm:min-h-[90px]"></div>`;
+      }
+
+      const listaFiltro = applyFilters();
+      const hojeStr = yyyyMMdd(new Date());
+
+      for (let dia = 1; dia <= diasNoMes; dia++) {
+        const dataStr = `${ano}-${pad2(mesNum)}-${pad2(dia)}`;
+        
+        const lancsDoDia = listaFiltro.filter(x => {
+          const dataAlvo = (x.pago && x.data_pagamento) ? x.data_pagamento : (x.vencimento || x.data);
+          return dataAlvo === dataStr;
+        });
+
+        let indicadores = "";
+        let temAtrasado = false;
+
+        lancsDoDia.forEach(x => {
+          const v = parseNumber(x.valor);
+          const isGanho = x.tipo === "ganho";
+          const pago = x.pago;
+          const vencimentoReal = x.vencimento || x.data;
+          const atrasado = !pago && !isGanho && vencimentoReal < hojeStr;
+          
+          if (atrasado) temAtrasado = true;
+
+          let badgeBg = "bg-slate-100 text-slate-700";
+          if (isGanho) {
+            badgeBg = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+          } else if (pago) {
+            badgeBg = "bg-slate-100 text-slate-500 line-through";
+          } else if (atrasado) {
+            badgeBg = "bg-rose-100 text-rose-800 border border-rose-300 font-extrabold animate-pulse";
+          } else {
+            badgeBg = "bg-amber-50 text-amber-800 border border-amber-200";
+          }
+
+          const sinal = isGanho ? "+" : "-";
+          indicadores += `<div class="text-[9px] sm:text-[10px] font-bold px-1 rounded mb-0.5 truncate ${badgeBg}">${sinal}${formatBRL(v)}</div>`;
+        });
+
+        const isHoje = dataStr === hojeStr;
+        const isSelecionado = dataStr === diaSelecionado;
+
+        let estiloCelula = "bg-white hover:bg-slate-50";
+        if (isSelecionado) {
+          estiloCelula = "bg-emerald-50 ring-2 ring-inset ring-emerald-600";
+        } else if (temAtrasado) {
+          estiloCelula = "bg-rose-50/60 hover:bg-rose-100/60";
+        } else if (isHoje) {
+          estiloCelula = "bg-emerald-50/30 ring-2 ring-inset ring-emerald-400";
+        }
+
+        grid.innerHTML += `
+          <div class="min-h-[70px] sm:min-h-[90px] p-1 sm:p-2 transition-all flex flex-col cursor-pointer select-none ${estiloCelula}" onclick="mostrarDetalhesDia('${dataStr}')">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] sm:text-xs font-bold ${isHoje || isSelecionado ? 'text-emerald-700' : 'text-slate-500'}">${dia}</span>
+              ${temAtrasado ? '<span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>' : ''}
+            </div>
+            <div class="flex-1 overflow-hidden">
+              ${indicadores}
+            </div>
+          </div>
+        `;
+      }
+
+      const totalCelulas = primeiroDia + diasNoMes;
+      const resto = totalCelulas % 7 === 0 ? 0 : 7 - (totalCelulas % 7);
+      for (let i = 0; i < resto; i++) {
+        grid.innerHTML += `<div class="bg-slate-50/50 min-h-[70px] sm:min-h-[90px]"></div>`;
+      }
+    }
+
+    window.mostrarDetalhesDia = function(dataStr) {
+      diaSelecionado = dataStr;
+      renderCalendario();
+
+      const lancs = applyFilters().filter(x => {
+        const dataAlvo = (x.pago && x.data_pagamento) ? x.data_pagamento : (x.vencimento || x.data);
+        return dataAlvo === dataStr;
+      });
+
+      const container = el("calendario-detalhes");
+      const lista = el("detalhe-lista");
+      el("detalhe-data").textContent = `Lançamentos do dia ${dataStr.split("-").reverse().join("/")}`;
+
+      const hojeStr = yyyyMMdd(new Date());
+
+      if (lancs.length === 0) {
+        lista.innerHTML = `<p class="text-xs font-semibold text-slate-400 py-3 text-center">Nenhum lançamento registrado neste dia.</p>`;
+      } else {
+        lista.innerHTML = lancs.map(item => {
+          const isGanho = item.tipo === "ganho";
+          const vencimentoReal = item.vencimento || item.data;
+          const isAtrasado = !item.pago && !isGanho && vencimentoReal < hojeStr;
+          const valorFormatado = (isGanho ? "+" : "-") + formatBRL(item.valor);
+          const corValor = isGanho ? 'text-emerald-600' : 'text-rose-600';
+          const safeId = esc(String(item.id));
+
+          return `
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 border ${isAtrasado ? 'border-rose-300 bg-rose-50/60' : 'border-slate-100 bg-slate-50'} rounded-2xl gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <p class="text-sm font-bold text-slate-900 truncate">${esc(item.desc)}</p>
+                  <span class="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">${esc(item.categoria)}</span>
+                </div>
+                
+                <!-- Campos de Data Editáveis Direto no Calendário -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-200/60 text-xs">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-slate-500 text-[11px]">Vencimento:</span>
+                    <input type="date" value="${vencimentoReal}" onchange="atualizarDataVencimentoCalendario('${safeId}', this.value)" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-emerald-700 text-[11px]">Pago em:</span>
+                    <input type="date" value="${item.data_pagamento || ''}" placeholder="Não pago" onchange="atualizarDataPagamentoCalendario('${safeId}', this.value)" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                <span class="text-sm font-extrabold ${corValor}">${valorFormatado}</span>
+                <button onclick="toggleStatus('${safeId}')" class="px-3 py-2 rounded-xl text-[10px] font-bold bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all shadow-sm">
+                  ${item.pago ? 'Marcar Pendente' : 'Pagar'}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      container.classList.remove("hidden");
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    // --- DESPESAS RECORRENTES ---
+    async function carregarRecorrencias() {
+      if (!currentUser) return;
+      const aviso = document.getElementById("recorrencias-aviso");
+      const { data, error } = await clienteSupabase.from("recorrencias").select("*").order("proxima_data", { ascending: true });
+      if (error) {
+        aviso.textContent = /relation|does not exist|schema cache|PGRST205|42P01|Could not find the table/i.test(error.message)
+          ? "A tabela de recorrências não foi encontrada. Confira se o script SQL foi executado com sucesso no Supabase."
+          : "Não foi possível carregar as recorrências: " + error.message;
+        aviso.classList.remove("hidden");
+        recorrencias = [];
+        renderRecorrencias();
+        render();
+        return;
+      }
+      aviso.classList.add("hidden");
+      recorrencias = data || [];
+      renderRecorrencias();
+      render();
+    }
+
+    function inscreverRealtimeRecorrencias() {
+      if (realtimeRecorrencias) clienteSupabase.removeChannel(realtimeRecorrencias);
+      realtimeRecorrencias = clienteSupabase.channel("tabela-recorrencias")
+        .on("postgres_changes", { event: "*", schema: "public", table: "recorrencias" }, () => carregarRecorrencias())
+        .subscribe();
+    }
+
+    function estimativaMensalRec(r) {
+      const v = parseNumber(r.valor);
+      if (r.frequencia === "semanal") return v * 52 / 12 / Math.max(1, Number(r.intervalo) || 1);
+      if (r.frequencia === "anual") return v / (12 * Math.max(1, Number(r.intervalo) || 1));
+      return v / Math.max(1, Number(r.intervalo) || 1);
+    }
+
+    async function registrarRecorrenciaAgora(id) {
+      const r = recorrencias.find(x => Number(x.id) === Number(id));
+      if (!r) return;
+
+      const mesAlvo = monthFilter === "all" ? currentMonthKey() : monthFilter;
+      const [ano, mes] = mesAlvo.split("-").map(Number);
+      const diaIni = Number(String(r.data_inicio).split("-")[2]) || 1;
+      const maxDia = daysInMonth(ano, mes);
+      const dataRec = `${ano}-${pad2(mes)}-${pad2(Math.min(diaIni, maxDia))}`;
+      const dataHoje = yyyyMMdd(new Date());
+
+      const novoLancamento = {
+        descricao: (r.descricao || 'Recorrente').trim(),
+        valor: r.valor,
+        categoria: r.categoria || '📌 Outros',
+        tipo: 'fixo',
+        conta: r.conta || 'salario',
+        pessoa: r.pessoa || 'Yudi', 
+        data: dataRec,
+        data_vencimento: dataRec,
+        pago: true, 
+        data_pagamento: dataHoje,
+        user_id: currentUser.id
+      };
+
+      const { error } = await clienteSupabase.from("lancamentos").insert([novoLancamento]);
+      if (error) {
+        showToast("danger", "Erro ao registrar", error.message);
+      } else {
+        showToast("success", "Registrado e Pago!", `${r.descricao} foi adicionado como pago no mês ${monthLabelPt(mesAlvo)}.`);
+        carregarDados();
+        mostrarView("painel"); 
+      }
+    }
+
+    function renderRecorrencias() {
+      const lista = document.getElementById("recorrencias-lista");
+      const vazio = document.getElementById("recorrencias-vazio");
+      const ativas = recorrencias.filter(r => r.ativo);
+      const pausadas = recorrencias.filter(r => !r.ativo);
+      const total = ativas.reduce((s, r) => s + estimativaMensalRec(r), 0);
+      document.getElementById("rec-kpi-ativas").textContent = ativas.length;
+      document.getElementById("rec-kpi-pausadas").textContent = pausadas.length;
+      document.getElementById("rec-kpi-total").textContent = formatBRL(total);
+      vazio.classList.toggle("hidden", recorrencias.length > 0);
+      lista.innerHTML = recorrencias.map(r => {
+        const freq = r.frequencia === "semanal" ? "Semanal" : r.frequencia === "anual" ? "Anual" : "Mensal";
+        const intervalo = Number(r.intervalo) > 1 ? `A cada ${r.intervalo} ${r.frequencia === "semanal" ? "semanas" : r.frequencia === "anual" ? "anos" : "meses"}` : freq;
+        const valor = r.valor_variavel ? "Valor variável" : formatBRL(r.valor);
+        const proxima = r.proxima_data ? new Date(r.proxima_data + "T00:00:00").toLocaleDateString("pt-BR") : "Não definida";
+        const inicioFmt = r.data_inicio ? r.data_inicio.split("-").reverse().join("/") : "—";
+        return `<article class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-5 ${r.ativo ? "" : "opacity-70"}">
+          <div class="flex items-start justify-between gap-3"><div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><h3 class="font-extrabold text-slate-800 text-sm break-words">${esc(r.descricao)}</h3><span class="text-[9px] font-bold px-2 py-1 rounded-full ${r.ativo ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}">${r.ativo ? "ATIVA" : "PAUSADA"}</span></div><p class="text-[11px] text-slate-500 mt-1">${esc(r.categoria)} · ${esc(intervalo)}</p></div><p class="font-extrabold text-slate-800 text-sm whitespace-nowrap">${esc(valor)}</p></div>
+          <div class="grid grid-cols-2 gap-2 mt-4 text-[10px]"><div class="bg-slate-50 rounded-xl p-3"><p class="text-slate-400 font-bold uppercase">Próxima data</p><p class="text-slate-700 font-bold mt-1">${esc(proxima)}</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-slate-400 font-bold uppercase">Início</p><p class="text-slate-700 font-bold mt-1">${esc(inicioFmt)}</p></div></div>
+          <div class="flex flex-wrap gap-2 mt-4">
+            <button type="button" onclick="registrarRecorrenciaAgora(${Number(r.id)})" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold shadow-sm"><i class="fa-solid fa-check mr-1"></i>Registrar este mês (Pago)</button>
+            <button type="button" onclick="editarRecorrencia(${Number(r.id)})" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold"><i class="fa-solid fa-pen mr-1"></i>Editar</button>
+            <button type="button" onclick="alternarRecorrencia(${Number(r.id)}, ${!r.ativo})" class="px-3 py-2 rounded-lg ${r.ativo ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"} text-[10px] font-bold">${r.ativo ? "Pausar" : "Reativar"}</button>
+            <button type="button" onclick="excluirRecorrencia(${Number(r.id)})" class="px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold"><i class="fa-solid fa-trash mr-1"></i>Excluir</button>
+          </div>
+        </article>`;
+      }).join("");
+    }
+
+    function abrirRecorrenciaModal(r = null) {
+      document.getElementById("recorrencia-form").reset();
+      document.getElementById("rec-id").value = r ? r.id : "";
+      document.getElementById("rec-modal-titulo").textContent = r ? "Editar despesa recorrente" : "Nova despesa recorrente";
+      document.getElementById("rec-descricao").value = r?.descricao || "";
+      document.getElementById("rec-valor").value = r?.valor ?? "0";
+      document.getElementById("rec-categoria").value = r?.categoria || "";
+      document.getElementById("rec-variavel").checked = !!r?.valor_variavel;
+      document.getElementById("rec-frequencia").value = r?.frequencia || "mensal";
+      document.getElementById("rec-intervalo").value = r?.intervalo || 1;
+      document.getElementById("rec-inicio").value = r?.data_inicio || yyyyMMdd(new Date());
+      document.getElementById("rec-fim").value = r?.data_fim || "";
+      document.getElementById("rec-conta").value = r?.conta || "";
+      document.getElementById("rec-pessoa").value = r?.pessoa || "";
+      mostrarModal("recorrencia-overlay");
+    }
+
+    function editarRecorrencia(id) {
+      const r = recorrencias.find(x => Number(x.id) === Number(id));
+      if (r) abrirRecorrenciaModal(r);
+    }
+
+    async function alternarRecorrencia(id, ativo) {
+      const { error } = await clienteSupabase.from("recorrencias").update({ ativo, updated_at: new Date().toISOString() }).eq("id", id);
+      if (error) showToast("danger", "Não foi possível atualizar", error.message);
+      else { showToast("success", ativo ? "Recorrência reativada" : "Recorrência pausada", "A alteração foi salva."); carregarRecorrencias(); }
+    }
+
+    async function excluirRecorrencia(id) {
+      if (!confirm("Excluir esta recorrência? Os lançamentos já existentes não serão apagados.")) return;
+      const { error } = await clienteSupabase.from("recorrencias").delete().eq("id", id);
+      if (error) showToast("danger", "Não foi possível excluir", error.message);
+      else { showToast("success", "Recorrência excluída", "Os lançamentos existentes foram preservados."); carregarRecorrencias(); }
+    }
+
+    document.getElementById("btn-nova-recorrencia").addEventListener("click", () => abrirRecorrenciaModal());
+    document.getElementById("recorrencia-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentUser) return showToast("danger", "Sessão expirada", "Entre novamente para continuar.");
+      const id = document.getElementById("rec-id").value;
+      const data_inicio = document.getElementById("rec-inicio").value;
+      const data_fim = document.getElementById("rec-fim").value || null;
+      if (data_fim && data_fim < data_inicio) return showToast("danger", "Datas inválidas", "A data final não pode ser anterior à data inicial.");
+      const campos = {
+        descricao: document.getElementById("rec-descricao").value.trim(),
+        valor: parseNumber(document.getElementById("rec-valor").value),
+        valor_variavel: document.getElementById("rec-variavel").checked,
+        categoria: document.getElementById("rec-categoria").value.trim(),
+        tipo: "fixo",
+        frequencia: document.getElementById("rec-frequencia").value,
+        intervalo: Math.min(24, Math.max(1, Number(document.getElementById("rec-intervalo").value) || 1)),
+        data_inicio,
+        data_fim,
+        proxima_data: data_inicio,
+        conta: document.getElementById("rec-conta").value || null,
+        pessoa: document.getElementById("rec-pessoa").value || null,
+        updated_at: new Date().toISOString()
+      };
+      if (!campos.descricao || !campos.categoria || !data_inicio) return showToast("danger", "Campos obrigatórios", "Preencha descrição, categoria e início.");
+      if (id) {
+        const { error } = await clienteSupabase.from("recorrencias").update(campos).eq("id", id);
+        if (error) return showToast("danger", "Erro ao atualizar", error.message);
+      } else {
+        const { error } = await clienteSupabase.from("recorrencias").insert([{ ...campos, user_id: currentUser.id }]);
+        if (error) return showToast("danger", "Erro ao cadastrar", error.message);
+      }
+      esconderModal("recorrencia-overlay");
+      showToast("success", id ? "Recorrência atualizada" : "Recorrência cadastrada", "Recorrência salva e refletida nas projeções.");
+      carregarRecorrencias();
+    });
+
     function renderExtras() {
-      [renderBannerFixos, renderParcelasFuturas, renderLimites].forEach(fn => {
+      [renderBannerFixos, renderParcelasFuturas, renderLimites, renderCalendario].forEach(fn => {
         try { fn(); } catch (err) { console.error("Erro em " + fn.name, err); }
       });
     }
