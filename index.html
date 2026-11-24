@@ -83,6 +83,19 @@
   }
 }
     body { font-family: 'Inter', sans-serif; }
+
+    /* Evita que os campos de data ultrapassem o formulário no Safari do iPhone. */
+    #form .grid > div { min-width: 0; }
+    #form input[type="date"] {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    @media (max-width: 639px) {
+      #form .grid.grid-cols-2 { grid-template-columns: minmax(0, 1fr); }
+    }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
